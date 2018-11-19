@@ -11,6 +11,7 @@ It is an opinionated, server-first distribution.
 
 ## Features
 * Automatic updates
+* Bring your own pkgs.  Meaning no more `blah.package` setting in modules. Modules are purely config, not an override for packages.
 * Atomic upgrades and rollbacks through reboots or kexec
 * No GUI components
 * Have to include modules on demand.
