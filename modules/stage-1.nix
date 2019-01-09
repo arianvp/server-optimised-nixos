@@ -5,8 +5,7 @@ Implementation of the stage-1 init using systemd
 with import ../../nixpkgs/nixos/modules/system/boot/systemd-unit-options.nix { inherit config lib; };
 with import ../../nixpkgs/nixos/modules/system/boot/systemd-lib.nix { inherit config lib pkgs; };
 let
-  # TODO Do not make this hardcoded
-  unitsDebug = pkgs.writeText "units" "${builtins.toJSON config.stage-1.systemd.units}";
+  cfg = config.stage-1;
   initrdRelease = pkgs.writeText "initrd-release" ''
     NAME=NixOS
     ID=nixos
@@ -18,17 +17,24 @@ let
     SUPPORT_URL="https://nixos.org/nixos/support.html"
     BUG_REPORT_URL="https://github.com/NixOS/nixpkgs/issues"
   '';
+
+
+  units = lib.attrsets.mapAttrsToList (k: v: { symlink = "/etc/systemd/system/${k}"; object = "${v.unit}/${k}"; }) cfg.systemd.units;
+
   # We use systemd as an initrd
   initrd = pkgs.makeInitrd {
-    inherit (config.stage-1.initrd) compressor;
+    inherit (cfg.initrd) compressor;
     # TODO: systemd closure is kinda embarisingly big. maybe not most suited for a stage-1
     contents = [
       { symlink = "/init"; object = "${pkgs.systemd}/lib/systemd";  }
       { symlink = "/etc/initrd-release"; object = "${initrdRelease}"; }
-    ];
+    ]  ++ units;
+    # TODO upstream systemd units like default.target
+    # TODO check for "enabled" and for "wantedBy"
   };
 in
 {
+  imports = [ ./squashfs.nix ];
   options.stage-1 = {
     initrd.compressor = lib.options.mkOption {
       type = lib.types.str;
@@ -53,6 +59,5 @@ in
   };
   config = {
     system.build.initrd = initrd;
-    system.build.systemdUnits = unitsDebug;
   };
 }

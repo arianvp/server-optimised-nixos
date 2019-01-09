@@ -29,7 +29,6 @@ in
     imports = [
       ./kernel.nix
       ./stage-1.nix
-      ./grub.nix
       ../../nixpkgs/nixos/modules/misc/assertions.nix
     ];
     options = {
