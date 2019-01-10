@@ -5,6 +5,6 @@ let
 in
 {
   config.system.build.squashfs = makeSquashfs {
-    storeContents = [ ];
+    storeContents = pkgs.writeText "hey" "yo";
   };
 }
