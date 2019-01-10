@@ -7,7 +7,7 @@ let
     echo -n "$kernelParams" >                   $out/kernel-params
   '';
   baseSystem = pkgs.stdenvNoCC.mkDerivation {
-    name = "coreos";
+    name = "baseSystem";
     preferLocalBuild = true;
     allowSubstitutes = false;
     buildCommand = systemBuilder;
