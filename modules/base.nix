@@ -1,29 +1,16 @@
 { config, lib, pkgs, ... }:
 let
-  systemBuilder = ''
-    mkdir $out
-    ln -s ${config.system.build.kernel}/bzImage $out/kernel
-    ln -s ${config.system.build.initrd}/initrd  $out/initrd
-    echo -n "$kernelParams" >                   $out/kernel-params
-  '';
-  baseSystem = pkgs.stdenvNoCC.mkDerivation {
-    name = "baseSystem";
-    preferLocalBuild = true;
-    allowSubstitutes = false;
-    buildCommand = systemBuilder;
-    kernelParams = config.kernel.params;
-  };
 
   failedAssertions = map (x: x.message) (lib.filter (x: !x.assertion) config.assertions);
 
+  # showWarnings : a -> a
   showWarnings = res: lib.fold (w: x: builtins.trace "[1;31mwarning: ${w}[0m" x) res config.warnings;
 
-  baseSystemAssertWarn = if failedAssertions != []
-    then throw "\nFailed assertions:\n${lib.concatStringsSep "\n" (map (x: "- ${x}") failedAssertions)}"
-    else showWarnings baseSystem;
-
-  # Replace runtime dependencies
-  system = baseSystemAssertWarn;
+  #  showWarningsOrFail : a -> a
+  showWarningsOrFail = res:
+    if failedAssertions != []
+      then throw "\nFailed assertions:\n${lib.concatStringsSep "\n" (map (x: "- ${x}") failedAssertions)}"
+      else showWarnings res;
 in
   {
     imports = [
@@ -43,14 +30,13 @@ in
       };
     };
     config = {
-      system.build.system = system;
-      system.build.runvm = pkgs.writeScript "runner" ''
+      system.build.runvm = showWarningsOrFail (pkgs.writeScript "runner" ''
         #!${pkgs.stdenv.shell}
         exec ${pkgs.qemu_kvm}/bin/qemu-kvm -name nixos -m 512 \
           -drive index=0,id=drive1,file=${config.system.build.squashfs},readonly,media=cdrom,format=raw,if=virtio \
           -kernel ${config.system.build.kernel}/bzImage -initrd ${config.system.build.initrd}/initrd -nographic \
           -append "console=ttyS0 ${toString config.kernel.params} quiet panic=-1" -no-reboot \
           -device virtio-rng-pci
-      '';
+      '');
     };
   }

@@ -18,30 +18,27 @@ let
     BUG_REPORT_URL="https://github.com/NixOS/nixpkgs/issues"
   '';
 
-  shell = "${pkgs.busybox}/bin/ash";
-  init = pkgs.writeScript "stage1" 
-    ''
-    #!${shell}
-    echo "Server Optimised NixOS Stage 1"
-    '';
-    initrd = pkgs.makeInitrd {
-      contents = [{symlink = "/init"; object = "${init}"; }];
-    };
-  # initrd = pkgs.makeInitrd { contents = [ { symlink = "/init"; object = "${init}"; } ] };
+
+  initrd = pkgs.makeInitrd {
+    inherit (cfg) compressor;
+    contents = [
+      { symlink = "/etc/initrd-release"; object = "${initrdRelease}"; }
+      { symlink = "/init";               object = "${pkgs.systemd}/lib/systemd/systemd"; }
+      { symlink = "/etc/systemd/system"; object = "${pkgs.systemd}/example/systemd/system"; }
+    ];
+  };
 in
 {
   options.stage-1 = {
-    initrd.compressor = lib.options.mkOption {
+    compressor = lib.options.mkOption {
       type = lib.types.str;
       internal = true;
       default = "gzip -9n";
       example = "xz";
     };
+
     systemd.units = lib.options.mkOption {
       default = {};
-      description = ''
-        The list of units present in the initrd
-      '';
       type = with lib.types; attrsOf (submodule (
         {name, config, ...}: {
           options = concreteUnitOptions;
@@ -53,6 +50,8 @@ in
     };
   };
   config = {
+    kernel.params = [ "rd.systemd.unit=initrd.target" ];
+    # initrd.kernelModules = [ "autofs4" ];
     system.build.initrd = initrd;
   };
 }
