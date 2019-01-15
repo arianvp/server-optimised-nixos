@@ -18,14 +18,27 @@ let
     BUG_REPORT_URL="https://github.com/NixOS/nixpkgs/issues"
   '';
 
+  upstreamUnits = [
+    "autovt@.service"
+  ];
+
+  sysroot = 
+    pkgs.writeText "sysroot.mount"
+    ''
+    [Mount]
+    What=/dev/vda
+    Where=/sysroot
+    Type=squashfs
+    '';
+
 
   initrd = pkgs.makeInitrd {
     inherit (cfg) compressor;
     contents = [
       { symlink = "/etc/initrd-release"; object = "${initrdRelease}"; }
       { symlink = "/init";               object = "${pkgs.systemd}/lib/systemd/systemd"; }
-      { symlink = "/etc/systemd/system"; object = "${pkgs.systemd}/example/systemd/system"; }
-    ];
+    ] ++ (map (unit: { symlink = "/etc/systemd/system/${unit}"; object = "${pkgs.systemd}/example/systemd/system/${unit}"; }) upstreamUnits) ++
+    [{ symlink = "/etc/systemd/system/sysroot.mount"; object = "${sysroot}"; } ];
   };
 in
 {
