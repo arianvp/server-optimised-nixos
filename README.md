@@ -9,6 +9,8 @@ by  NixOS, ChromeOS, Container Optimised Linux and  Container Linux.
 
 It is an opinionated, server-first distribution.
 
+Note that most of the listed features are currently vaporware
+
 ## Features
 * Automatic updates
 * Bring your own pkgs.  Meaning no more `blah.package` setting in modules. Modules are purely config, not an override for packages.
