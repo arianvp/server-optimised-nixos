@@ -1,16 +1,10 @@
 { config ? ./config/example.nix
-, nixpkgs ? <nixpkgs>
+, lib ? import <nixpkgs/lib>
+, pkgs ? import <nixpkgs> {}
 }:
-let
-  pkgs = import nixpkgs {};
-  commonConfig = {
-    _module = {
-      args.pkgs = pkgs;
-      check = true;
-    };
-  };
-  system = pkgs.lib.modules.evalModules {
-    modules = [ config commonConfig ];
-  };
-in
-  system.config
+import ./lib/eval-config.nix {
+  inherit pkgs lib;
+  modules = [
+    ./config/example.nix
+  ];
+}
