@@ -15,7 +15,8 @@ Note that most of the listed features are currently vaporware
 * Automatic updates
 * Bring your own pkgs.  Meaning no more `blah.package` setting in modules. Modules are purely config, not an override for packages.
   * Does away with the `nixpkgs` module. and the `system` parameter
-* Atomic upgrades and rollbacks through reboots or kexec
+* Atomic upgrades and rollbacks through reboots or kexec\
+  * Automatic boot assessment through systemd-boot with automatic rollback when system is unhealthy
 * No GUI components
 * Have to include modules on demand.
 * Heavily documented modules
