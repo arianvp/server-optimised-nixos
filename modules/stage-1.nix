@@ -2,8 +2,6 @@
 Implementation of the stage-1 init using systemd
 */
 { pkgs, lib, config, ... }:
-with import ../../nixpkgs/nixos/modules/system/boot/systemd-unit-options.nix { inherit config lib; };
-with import ../../nixpkgs/nixos/modules/system/boot/systemd-lib.nix { inherit config lib pkgs; };
 let
   cfg = config.stage-1;
   initrdRelease = pkgs.writeText "initrd-release" ''
@@ -30,6 +28,9 @@ let
     "emergency.target"
 
     "systemd-journald.service"
+    "systemd-journald.socket"
+    "systemd-journald-audit.socket"
+    "systemd-journald-dev-log.socket"
 
     "initrd-root-device.target"
     "initrd-root-fs.target"
@@ -42,6 +43,8 @@ let
     "initrd-udevadm-cleanup-db.service"
     "initrd-switch-root.target"
     "initrd-switch-root.service"
+
+    "sockets.target.wants"
 
   ];
 
