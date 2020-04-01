@@ -17,8 +17,8 @@ let
   '';
 
   modulesClosure = pkgs.makeModulesClosure {
-    rootModules = cfg.kernelModules;
-    kernel = config.system.build.kernel; # TODO configuralbe?
+    rootModules = cfg.kernelModules ++ cfg.availableKernelModules;
+    kernel = config.system.build.kernel; # TODO configurable?
     firmware = config.system.build.kernel;
     allowMissing = false;
   };
@@ -32,7 +32,7 @@ let
   '';
 
   emergency =
-    pkgs.writeTextDir "emergency.service" ''
+    pkgs.writeText "emergency.service" ''
       [Unit]
       Description=Emergency Shell
       Documentation=man:sulogin(8)
@@ -53,26 +53,39 @@ let
       IgnoreSIGPIPE=no
       SendSIGHUP=yes
     '';
-  sysroot =
-    pkgs.writeTextDir "sysroot.mount" ''
-      [Mount]
-      What=/dev/vda
-      Where=/sysroot
-      Type=squashfs
-    '';
 
-  units = pkgs.buildEnv {
+  sysroot = pkgs.writeText "sysroot.mount" ''
+    [Mount]
+    What=/dev/vda
+    Where=/sysroot
+    Type=squashfs
+  '';
+
+  ownUnits = pkgs.linkFarm "own-units" [
+    { name = "initrd-cleanup.service"; path = "/dev/null"; }
+    { name = "emergency.service"; path = "${emergency}"; }
+    { name = "sysroot.mount"; path = "${sysroot}"; }
+  ];
+
+  units = pkgs.symlinkJoin {
     name = "units";
     ignoreCollisions = true;
     paths = [
-      emergency #NOTE should override
-      sysroot
+      # NOTE: User-provided inputs have presedence over systemd-provided ones
+      ownUnits
       "${pkgs.systemd}/example/systemd/system"
     ];
   };
 
   # TODO we shouldn't load all the modules. just the ones we need
   modules = pkgs.writeText "modules.conf" (pkgs.lib.strings.intersperse "\n" cfg.kernelModules);
+
+  initrdfs = pkgs.linkFarm "initrdfs" [
+    { name = "etc/initrd-release"; path = "${initrdRelease}"; }
+    { name = "init"; path = "${init}"; }
+    { name = "etc/systemd/system"; path = "${units}"; }
+    { name = "etc/modules-load.d/modules.conf"; path = "${modules}"; }
+  ];
 
   initrd = pkgs.makeInitrd {
     inherit (cfg) compressor;
@@ -93,14 +106,22 @@ in
       example = "xz";
     };
 
+    availableKernelModules = lib.options.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ "autofs4 " "virtio_net" "virtio_pci" "virtio_blk" "virtio_scsi" "virtio_balloon" "virtio_console" ];
+    };
+
     kernelModules = lib.options.mkOption {
       type = lib.types.listOf lib.types.str;
-      default = [ "autofs4" "squashfs" "virtio_net" "virtio_pci" "virtio_blk" "virtio_scsi" "virtio_balloon" "virtio_console" ];
+      default = [];
     };
 
   };
   config = {
-    kernel.params = [ "rd.systemd.unit=initrd.target" "systemd.journald.forward_to_console=1" ]; # not needed in 245. See NEWS
+    kernel.params = [ "rd.systemd.unit=initrd.target" ]; # not needed in 245. See NEWS
     system.build.initrd = initrd;
+    system.build.initrd2 = (pkgs.callPackage ../lib/make-initrd.nix) { storeContents = initrdfs; };
+    system.build.initrdfs = initrdfs;
+    system.build.units = units;
   };
 }
