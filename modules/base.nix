@@ -17,7 +17,7 @@ in
       ./kernel.nix
       ./stage-1.nix
       ./squashfs.nix
-      ../../nixpkgs/nixos/modules/misc/assertions.nix
+      # ../../nixpkgs/nixos/modules/misc/assertions.nix
     ];
     options = {
       system.build = lib.options.mkOption {
@@ -30,7 +30,7 @@ in
       };
     };
     config = {
-      system.build.runvm = showWarningsOrFail (pkgs.writeScript "runner" ''
+      system.build.runvm = (pkgs.writeScript "runner" ''
         #!${pkgs.stdenv.shell}
         exec ${pkgs.qemu_kvm}/bin/qemu-kvm -name nixos -m 512 \
           -drive index=0,id=drive1,file=${config.system.build.squashfs},readonly,media=cdrom,format=raw,if=virtio \
