@@ -7,8 +7,5 @@ default modules imported and config enabled.
   imports = [ ../modules/base.nix ];
   options = {};
   config = {
-    stage-1.systemd.units."hello.service" = {
-      wantedBy = [ "default.target" ];
-    };
   };
 }

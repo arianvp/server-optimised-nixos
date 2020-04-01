@@ -16,38 +16,6 @@ let
     BUG_REPORT_URL="https://github.com/NixOS/nixpkgs/issues"
   '';
 
-  upstreamUnits = [
-    "autovt@.service"
-    "swap.target"
-    "local-fs-pre.target"
-    "local-fs.target"
-    "sysinit.target"
-    "timers.target" "paths.target" "sockets.target"
-    "basic.target" "rescue.service" "rescue.target"
-
-    "emergency.target"
-
-    "systemd-journald.service"
-    "systemd-journald.socket"
-    "systemd-journald-audit.socket"
-    "systemd-journald-dev-log.socket"
-
-    "initrd-root-device.target"
-    "initrd-root-fs.target"
-    "initrd-parse-etc.service"
-
-    "initrd-fs.target"
-    "initrd.target"
-
-    "initrd-cleanup.service"
-    "initrd-udevadm-cleanup-db.service"
-    "initrd-switch-root.target"
-    "initrd-switch-root.service"
-
-    "sockets.target.wants"
-
-  ];
-
   modulesClosure = pkgs.makeModulesClosure {
     rootModules = cfg.kernelModules;
     kernel = config.system.build.kernel; # TODO configuralbe?
@@ -56,6 +24,7 @@ let
   };
 
   init = pkgs.writeShellScript "init" ''
+    ${pkgs.busybox}/bin/echo "Welcome to Server-optimised NixOS"
     ${pkgs.busybox}/bin/mkdir -p /lib
     ${pkgs.busybox}/bin/ln -s ${modulesClosure}/lib/modules /lib/modules
     ${pkgs.busybox}/bin/ln -s ${modulesClosure}/lib/firmware /lib/firmware
@@ -63,42 +32,56 @@ let
   '';
 
   emergency =
-    pkgs.writeText "emergency.service" ''
-    [Unit]
-    Description=Emergency Shell
-    Documentation=man:sulogin(8)
-    DefaultDependencies=no
-    Conflicts=shutdown.target
-    Conflicts=rescue.service
-    Before=shutdown.target
-    Before=rescue.service
+    pkgs.writeTextDir "emergency.service" ''
+      [Unit]
+      Description=Emergency Shell
+      Documentation=man:sulogin(8)
+      DefaultDependencies=no
+      Conflicts=shutdown.target
+      Conflicts=rescue.service
+      Before=shutdown.target
+      Before=rescue.service
 
-    [Service]
-    ExecStart=${pkgs.busybox}/bin/ash
-    Environment=PATH=${pkgs.busybox}/bin:${pkgs.systemd}/bin
-    Type=idle
-    StandardInput=tty-force
-    StandardOutput=inherit
-    StandardError=inherit
-    KillMode=process
-    IgnoreSIGPIPE=no
-    SendSIGHUP=yes
-  '';
+      [Service]
+      ExecStart=${pkgs.busybox}/bin/ash
+      Environment=PATH=${pkgs.busybox}/bin:${pkgs.systemd}/bin:${pkgs.utillinuxMinimal}/bin
+      Type=idle
+      StandardInput=tty-force
+      StandardOutput=inherit
+      StandardError=inherit
+      KillMode=process
+      IgnoreSIGPIPE=no
+      SendSIGHUP=yes
+    '';
   sysroot =
-    pkgs.writeText "sysroot.mount" ''
+    pkgs.writeTextDir "sysroot.mount" ''
       [Mount]
       What=/dev/vda
       Where=/sysroot
       Type=squashfs
     '';
 
+  units = pkgs.buildEnv {
+    name = "units";
+    ignoreCollisions = true;
+    paths = [
+      emergency #NOTE should override
+      sysroot
+      "${pkgs.systemd}/example/systemd/system"
+    ];
+  };
+
+  # TODO we shouldn't load all the modules. just the ones we need
+  modules = pkgs.writeText "modules.conf" (pkgs.lib.strings.intersperse "\n" cfg.kernelModules);
 
   initrd = pkgs.makeInitrd {
     inherit (cfg) compressor;
     contents = [
       { symlink = "/etc/initrd-release"; object = "${initrdRelease}"; }
       { symlink = "/init"; object = "${init}"; }
-    ] ++ (map (unit: { symlink = "/etc/systemd/system/${unit}"; object = "${pkgs.systemd}/example/systemd/system/${unit}"; }) upstreamUnits) ++ [ { symlink = "/etc/systemd/system/sysroot.mount"; object = "${sysroot}"; } { symlink = "/etc/systemd/system/emergency.service"; object="${emergency}";} ];
+      { symlink = "/etc/systemd/system"; object = "${units}"; }
+      { symlink = "/etc/modules-load.d/modules.conf"; object = "${modules}"; }
+    ];
   };
 in
 {
@@ -112,22 +95,9 @@ in
 
     kernelModules = lib.options.mkOption {
       type = lib.types.listOf lib.types.str;
-      default = [ "autofs4 "];
+      default = [ "autofs4" "squashfs" "virtio_net" "virtio_pci" "virtio_blk" "virtio_scsi" "virtio_balloon" "virtio_console" ];
     };
 
-    systemd.units = lib.options.mkOption {
-      default = {};
-      type = with lib.types; attrsOf (
-        submodule (
-          { name, config, ... }: {
-            options = concreteUnitOptions;
-            config = {
-              unit = lib.mkDefault (makeUnit name config);
-            };
-          }
-        )
-      );
-    };
   };
   config = {
     kernel.params = [ "rd.systemd.unit=initrd.target" "systemd.journald.forward_to_console=1" ]; # not needed in 245. See NEWS
