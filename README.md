@@ -11,6 +11,12 @@ It is an opinionated, server-first distribution.
 
 Note that most of the listed features are currently vaporware
 
+## Running
+You can spawn a QEMU for now:
+```
+$(nix-build -A config.systemd.build.runvm)
+```
+
 ## Features
 * Automatic updates
 * Bring your own pkgs.  Meaning no more `blah.package` setting in modules. Modules are purely config, not an override for packages.
@@ -30,7 +36,7 @@ Note that most of the listed features are currently vaporware
 * Systemd generators are _Derivations_ instead of something magical that runs during boot
 * Only use ``Requires and Wants. Not WantedBy and RequiresBy
    i.e.
-  
+
    targets.multi-user.wants = [ "nginx.service" ];
 
    instead of    services.nginx.wantedBy = [ "multi-user.target" ];
