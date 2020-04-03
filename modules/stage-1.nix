@@ -23,14 +23,6 @@ let
     allowMissing = false;
   };
 
-  init = pkgs.writeShellScript "init" ''
-    ${pkgs.busybox}/bin/echo "Welcome to Server-optimised NixOS"
-    ${pkgs.busybox}/bin/mkdir -p /lib
-    ${pkgs.busybox}/bin/ln -s ${modulesClosure}/lib/modules /lib/modules
-    ${pkgs.busybox}/bin/ln -s ${modulesClosure}/lib/firmware /lib/firmware
-    exec ${pkgs.systemd}/lib/systemd/systemd
-  '';
-
   emergency =
     pkgs.writeText "emergency.service" ''
       [Unit]
@@ -62,9 +54,11 @@ let
   '';
 
   ownUnits = pkgs.linkFarm "own-units" [
-    { name = "initrd-cleanup.service"; path = "/dev/null"; }
+    { name = "initrd-cleanup.service"; path = "/dev/null"; } # NOTE: Just here to get us in emergency shell in right place
+    { name = "systemd-update-done.service"; path = "/dev/null"; } # TODO see how we get it to work
     { name = "emergency.service"; path = "${emergency}"; }
     { name = "sysroot.mount"; path = "${sysroot}"; }
+    { name = "local-fs.target.wants/sysroot.mount"; path = "${sysroot}"; }
   ];
 
   units = pkgs.symlinkJoin {
@@ -77,25 +71,18 @@ let
     ];
   };
 
-  # TODO we shouldn't load all the modules. just the ones we need
   modules = pkgs.writeText "modules.conf" (pkgs.lib.strings.intersperse "\n" cfg.kernelModules);
 
   initrdfs = pkgs.linkFarm "initrdfs" [
     { name = "etc/initrd-release"; path = "${initrdRelease}"; }
-    { name = "init"; path = "${init}"; }
+    { name = "init"; path = "${pkgs.systemd}/lib/systemd/systemd"; }
     { name = "etc/systemd/system"; path = "${units}"; }
     { name = "etc/modules-load.d/modules.conf"; path = "${modules}"; }
+    { name = "lib/modules"; path = "${modulesClosure}/lib/modules"; }
+    { name = "lib/firmware"; path = "${modulesClosure}/lib/firmware"; }
+    { name = "sbin/modprobe"; path = "${pkgs.kmod}/bin/modprobe"; }
   ];
 
-  initrd = pkgs.makeInitrd {
-    inherit (cfg) compressor;
-    contents = [
-      { symlink = "/etc/initrd-release"; object = "${initrdRelease}"; }
-      { symlink = "/init"; object = "${init}"; }
-      { symlink = "/etc/systemd/system"; object = "${units}"; }
-      { symlink = "/etc/modules-load.d/modules.conf"; object = "${modules}"; }
-    ];
-  };
 in
 {
   options.stage-1 = {
@@ -108,7 +95,7 @@ in
 
     availableKernelModules = lib.options.mkOption {
       type = lib.types.listOf lib.types.str;
-      default = [ "autofs4 " "virtio_net" "virtio_pci" "virtio_blk" "virtio_scsi" "virtio_balloon" "virtio_console" ];
+      default = [ "autofs4 " "squashfs" "virtio_net" "virtio_pci" "virtio_blk" "virtio_scsi" "virtio_balloon" "virtio_console" ];
     };
 
     kernelModules = lib.options.mkOption {
@@ -119,9 +106,9 @@ in
   };
   config = {
     kernel.params = [ "rd.systemd.unit=initrd.target" ]; # not needed in 245. See NEWS
-    system.build.initrd = initrd;
-    system.build.initrd2 = (pkgs.callPackage ../lib/make-initrd.nix) { storeContents = initrdfs; };
+    system.build.initrd = (pkgs.callPackage ../lib/make-initrd.nix) { storeContents = initrdfs; };
     system.build.initrdfs = initrdfs;
     system.build.units = units;
+    system.build.modulesClosure = modulesClosure;
   };
 }

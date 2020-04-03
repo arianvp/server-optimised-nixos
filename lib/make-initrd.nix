@@ -9,13 +9,14 @@ stdenv.mkDerivation {
   buildCommand = ''
     closureInfo=${closureInfo { rootPaths = storeContents; }}
     mkdir root
+
+    path=$(realpath root)
+
     cp $closureInfo/registration root/nix-path-registration
-    find $(cat $closureInfo/store-paths) -type f | cpio --make-directories --pass-through root
-    find ${storeContents} -type f | cpio --make-directories --directory ${storeContents} --pass-through root
+    find $(cat $closureInfo/store-paths) | cpio --make-directories --pass-through $path
+    (cd ${storeContents} && (find . | cpio --make-directories --pass-through $path))
 
-    mkdir $out
-    cp -R root $out
+    (cd $path && (find . | cpio -o -H newc | gzip > $out))
 
-    # (cat $closureInfo/store-paths) | cpio --directory / --create --format newc -R +0:+0 --reproducible  > $out
   '';
 }
