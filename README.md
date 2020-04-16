@@ -21,9 +21,11 @@ $(nix-build -A config.systemd.build.runvm)
 * Automatic updates
 * Bring your own pkgs.  Meaning no more `blah.package` setting in modules. Modules are purely config, not an override for packages.
   * Does away with the `nixpkgs` module. and the `system` parameter
+* Unattended reboots
 * Atomic upgrades and rollbacks through reboots or kexec\
   * Automatic boot assessment through systemd-boot with automatic rollback when system is unhealthy
 * No GUI components
+* fwupd integration
 * Have to include modules on demand.
 * Heavily documented modules
 * Systemd is used for both stage-1 and stage-2 init
