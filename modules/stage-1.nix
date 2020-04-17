@@ -46,19 +46,11 @@ let
       SendSIGHUP=yes
     '';
 
-  sysroot = pkgs.writeText "sysroot.mount" ''
-    [Mount]
-    What=/dev/vda
-    Where=/sysroot
-    Type=squashfs
-  '';
 
   ownUnits = pkgs.linkFarm "own-units" [
     { name = "initrd-cleanup.service"; path = "/dev/null"; } # NOTE: Just here to get us in emergency shell in right place
     { name = "systemd-update-done.service"; path = "/dev/null"; } # TODO see how we get it to work
     { name = "emergency.service"; path = "${emergency}"; }
-    { name = "sysroot.mount"; path = "${sysroot}"; }
-    { name = "local-fs.target.wants/sysroot.mount"; path = "${sysroot}"; }
   ];
 
   units = pkgs.symlinkJoin {
@@ -105,7 +97,10 @@ in
 
   };
   config = {
-    kernel.params = [ "rd.systemd.unit=initrd.target" ]; # not needed in 245. See NEWS
+    kernel.params = [
+      "root=/dev/vda"
+      "rd.systemd.unit=initrd.target" # not needed in 245. See NEWS
+    ];
     system.build.initrd = (pkgs.callPackage ../lib/make-initrd.nix) { storeContents = initrdfs; };
     system.build.initrdfs = initrdfs;
     system.build.units = units;
