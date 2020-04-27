@@ -47,3 +47,9 @@ $(nix-build -A config.systemd.build.runvm)
    Why? This makes me less confused about ordering. Arrows are hard
 
 
+
+## TODOs:
+
+* Make kernel-install optional through mesonFlags instead of hacky patch
+* Something with modulesTree so that depMod actually works!
+* microcode
