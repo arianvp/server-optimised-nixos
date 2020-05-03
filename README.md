@@ -31,11 +31,9 @@ $(nix-build -A config.systemd.build.runvm)
 * Systemd is used for both stage-1 and stage-2 init
 * Systemd-networkd based networking
 * Systemd-nspawn based containers (and also docker containers)
-* Alas _no_ systemd-boot as literally no hosting provider supports EFI
 * Heavy use of systemd-generators
 * Uses systemd-tmpfiles to populate `/etc`
 * Systemd resizes and formats disks on first boot
-* Systemd generators are _Derivations_ instead of something magical that runs during boot
 * Only use ``Requires and Wants. Not WantedBy and RequiresBy
    i.e.
 
@@ -46,10 +44,24 @@ $(nix-build -A config.systemd.build.runvm)
 
    Why? This makes me less confused about ordering. Arrows are hard
 
+* Initrd can reconfigure the system (by consulting cloud-metadata or matchbox-like system)
+  * https://github.com/coreos/afterburn
+  * https://coreos.com/matchbox/docs/latest/api.html
+  * https://github.com/poseidon/matchbox
+  * https://github.com/coreos/ignition
 
+## About my current gripes with NixOS "cloud" images
+
+NixOS ships a bunch of cloud images; Azure, AWS, Digitalocean, GCP.
+These support reconfiguring boxes through contacting metadata service and then nixos-rebuild'switching into
+the desired configuration.
+
+I guess this works 'fine'.
 
 ## TODOs:
 
 * Make kernel-install optional through mesonFlags instead of hacky patch
 * Something with modulesTree so that depMod actually works!
 * microcode
+* Make an initramfs optional?
+
