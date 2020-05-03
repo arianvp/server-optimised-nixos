@@ -99,7 +99,6 @@ in
   config = {
     kernel.params = [
       "root=/dev/vda"
-      "rd.systemd.unit=initrd.target" # not needed in 245. See NEWS
     ];
     system.build.initrd = (pkgs.callPackage ../lib/make-initrd.nix) { storeContents = initrdfs; };
     system.build.initrdfs = initrdfs;
