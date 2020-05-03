@@ -65,13 +65,18 @@ let
 
   modules = pkgs.writeText "modules.conf" (pkgs.lib.strings.intersperse "\n" cfg.kernelModules);
 
+  # Notes about initrd:
+  # nixpkgs kmod is patched to read from /run/current-system/kernel-modules
+  # echo ${pkgs.kmod}/bin/modprobe > /proc/sys/kernel/modprobe
+
   initrdfs = pkgs.linkFarm "initrdfs" [
     { name = "etc/initrd-release"; path = "${initrdRelease}"; }
     { name = "init"; path = "${pkgs.systemd}/lib/systemd/systemd"; }
     { name = "etc/systemd/system"; path = "${units}"; }
     { name = "etc/modules-load.d/modules.conf"; path = "${modules}"; }
     { name = "lib/modules"; path = "${modulesClosure}/lib/modules"; }
-    { name = "lib/firmware"; path = "${modulesClosure}/lib/firmware"; }
+    # No firmware for now
+    # { name = "lib/firmware"; path = "${modulesClosure}/lib/firmware"; }
     { name = "sbin/modprobe"; path = "${pkgs.kmod}/bin/modprobe"; }
   ];
 
@@ -98,11 +103,12 @@ in
   };
   config = {
     kernel.params = [
+      "rd.systemd.unit=initrd.target" # not needed in 245. See NEWS
       "root=/dev/vda"
     ];
     system.build.initrd = (pkgs.callPackage ../lib/make-initrd.nix) { storeContents = initrdfs; };
-    system.build.initrdfs = initrdfs;
-    system.build.units = units;
-    system.build.modulesClosure = modulesClosure;
+    # system.build.initrdfs = initrdfs;
+    # system.build.units = units;
+    # system.build.modulesClosure = modulesClosure;
   };
 }
