@@ -69,12 +69,13 @@ self: super: {
 
       mesonFlags = [
         "-Dsplit-usr=false" # This just seems to make things more complicated
+        "-Dsplit-bin=false"
         "-Drootprefix=${placeholder "out"}"
         "-Dsysconfdir=/etc" # NOTE: This is on purpose!!
         "-Dtests=false"
         "-Dinstall-tests=false"
         "-Dsysvinit-path="
-        "-Dsysrcnd-path="
+        "-Dsysvrcnd-path="
       ];
 
       # NOTE: We move $out/$out back to $out do undo the damage that DESTDIR did
@@ -83,6 +84,16 @@ self: super: {
         rm -rf $out/var
         mv $out/$out/* $out
         rm -rf $out/nix
+        rm -rf $out/lib/systemd/tests
+      '';
+
+      # NOTE: We should upstream this I guess?
+
+      # Patch dbus and systemd units
+      postFixup = ''
+        find $out/share/dbus-1/system-services -type f -name '*.service' -print0 | xargs -0 sed -i 's,/bin/false,${coreutils}/bin/false,g'
+
+
       '';
     }
   ) {};
