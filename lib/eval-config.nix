@@ -1,5 +1,5 @@
 { pkgs, lib,  modules, check ? true}:
-let 
+let
   commonConfig = rec {
     _file = ./eval-config.nix;
     key = _file;

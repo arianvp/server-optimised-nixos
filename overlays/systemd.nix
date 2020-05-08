@@ -1,5 +1,10 @@
 self: super: {
-  systemd = self.callPackage (
+  # These tests are slow; disable them for now for interactive dev
+  # bash-completion = super.bash-completion.overrideAttrs (old: old // { doCheck = false; } );
+
+  # use old systemd
+
+  systemd_ = self.callPackage (
     { stdenv
     , acl
     , coreutils
@@ -38,7 +43,7 @@ self: super: {
         patchelf
         # TODO needed for xml-helper.py but why is python a build dependency in the first place? Unwieldy for bootstrap
 
-        (buildPackages.python3Packages.python.withPackages ( ps: with ps; [ lxml ]))
+        (buildPackages.python3Packages.python.withPackages (ps: with ps; [ lxml ]))
 
       ];
       buildInputs = [
@@ -51,6 +56,17 @@ self: super: {
       ];
       doCheck = false;
       enableParallelBuilding = true;
+
+      # TODO: Honestly; we do not want implicit paths in systemd. we should
+      # patch the unit files instead
+      patches = [
+        ./0001-path-util.h-add-placeholder-for-DEFAULT_PATH_NORMAL.patch
+      ];
+
+      postPatch = ''
+        substituteInPlace src/basic/path-util.h --replace "@defaultPathNormal@" "${placeholder "out"}/bin/"
+
+      '';
 
       preConfigure = ''
         for dir in tools src/resolve test src/test; do
@@ -67,6 +83,7 @@ self: super: {
         export DESTDIR="$out"
       '';
 
+      # Systemd will read units from systemunitdir which is  rootprefixdir+lib/systemd/system
       mesonFlags = [
         "-Dsplit-usr=false" # This just seems to make things more complicated
         "-Dsplit-bin=false"
@@ -76,6 +93,7 @@ self: super: {
         "-Dinstall-tests=false"
         "-Dsysvinit-path="
         "-Dsysvrcnd-path="
+        "-Dldconfig=false"
       ];
 
       # NOTE: We move $out/$out back to $out do undo the damage that DESTDIR did
@@ -91,7 +109,12 @@ self: super: {
 
       # Patch dbus and systemd units
       postFixup = ''
-        find $out/share/dbus-1/system-services -type f -name '*.service' -print0 | xargs -0 sed -i 's,/bin/false,${coreutils}/bin/false,g'
+        find $out/share/dbus-1/system-services -type f -name '*.service' -exec \
+          sed -i 's,/bin/false,${coreutils}/bin/false,g' {} \;
+
+        #find $out/lib/systemd/system -type -f -name '*.service' -exec \
+        #  sed -i 's,{} ;
+
 
 
       '';

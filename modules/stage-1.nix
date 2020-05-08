@@ -36,7 +36,7 @@ let
 
       [Service]
       ExecStart=${pkgs.busybox}/bin/ash
-      Environment=PATH=${pkgs.busybox}/bin:${pkgs.systemd}/bin:${pkgs.utillinuxMinimal}/bin
+      Environment=PATH=${pkgs.busybox}/bin:${pkgs.systemd_}/bin:${pkgs.utillinuxMinimal}/bin
       Type=idle
       StandardInput=tty-force
       StandardOutput=inherit
@@ -59,7 +59,10 @@ let
     paths = [
       # NOTE: User-provided inputs have presedence over systemd-provided ones
       ownUnits
-      "${pkgs.systemd}/example/systemd/system"
+      # NOTE: systemd should already read from rootlibdir correctly :)
+
+      # NOTE: SYSTEMD_UNIT_PATH= can also be set :)
+      # "${pkgs.systemd_}/lib/systemd/system"
     ];
   };
 
@@ -71,7 +74,7 @@ let
 
   initrdfs = pkgs.linkFarm "initrdfs" [
     { name = "etc/initrd-release"; path = "${initrdRelease}"; }
-    { name = "init"; path = "${pkgs.systemd}/lib/systemd/systemd"; }
+    { name = "init"; path = "${pkgs.systemd_}/lib/systemd/systemd"; }
     { name = "etc/systemd/system"; path = "${units}"; }
     { name = "etc/modules-load.d/modules.conf"; path = "${modules}"; }
     { name = "lib/modules"; path = "${modulesClosure}/lib/modules"; }
@@ -104,7 +107,8 @@ in
   config = {
     kernel.params = [
       "rd.systemd.unit=initrd.target" # not needed in 245. See NEWS
-      "root=/dev/vda"
+      # "root=/dev/vda"
+      "rd.systemd.log_level=debug"
     ];
     system.build.initrd = (pkgs.callPackage ../lib/make-initrd.nix) { storeContents = initrdfs; };
     # system.build.initrdfs = initrdfs;

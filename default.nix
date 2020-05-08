@@ -1,12 +1,17 @@
 { config ? ./config/example.nix
-, pkgs ? import (import ./nix/sources.nix).nixpkgs {
-  overlays = map import [ ./overlays/systemd.nix ];
+, nixpkgs ? (import ./nix/sources.nix).nixpkgs
+, pkgs ? import nixpkgs {
+    overlays = map import [ ./overlays/systemd.nix ];
   }
 }:
-import ./lib/eval-config.nix {
+{
   inherit pkgs;
-  inherit (pkgs) lib;
-  modules = [
-    ./config/example.nix
-  ];
+  it =
+    import ./lib/eval-config.nix {
+      inherit pkgs;
+      inherit (pkgs) lib;
+      modules = [
+        ./config/example.nix
+      ];
+    };
 }

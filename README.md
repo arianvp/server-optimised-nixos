@@ -50,6 +50,26 @@ $(nix-build -A config.systemd.build.runvm)
   * https://github.com/poseidon/matchbox
   * https://github.com/coreos/ignition
 
+## Boot process
+
+systemConfig can either be a path to an evaluated thingy or a path to a nix expression
+
+systemd initrd is booted.
+
+Might need to patch `systemd/remount-fs/remount-fs.c`.  /usr and / are treated
+special by systemd and will be remounted in stage-2 with the correct /etc/fstab options.
+
+Why /usr too is a mystery to me; as the only way to mount it is by
+
+
+```
+# FIXME when linux < 4.5 is EOL, switch to atomic bind mounts
+#mount /nix/store /nix/store -o bind,remount,ro
+mount --bind /nix/store /nix/store
+mount -o remount,ro,bind /nix/store
+```
+
+
 ## About my current gripes with NixOS "cloud" images
 
 NixOS ships a bunch of cloud images; Azure, AWS, Digitalocean, GCP.
