@@ -71,7 +71,8 @@ let
       ownUnits
       # NOTE: systemd should already read from rootlibdir correctly :)
 
-      # NOTE: SYSTEMD_UNIT_PATH= can also be set :)
+      # NOTE: SYSTEMD_UNIT_PATH= can also be set :). So we do not need global paths;
+      # at least for _units_
       # "${pkgs.systemd_}/lib/systemd/system"
     ];
   };
@@ -87,7 +88,7 @@ let
     { name = "init"; path = "${pkgs.systemd_}/lib/systemd/systemd"; }
     { name = "etc/systemd/system"; path = "${units}"; }
     { name = "etc/modules-load.d/modules.conf"; path = "${modules}"; }
-    { name = "etc/udev/rules.d"; path = "${pkgs.systemd_}/lib/udev/rules.d"; }
+    { name = "etc/udev"; path = "${pkgs.systemd_}/lib/udev"; }
     { name = "lib/modules"; path = "${modulesClosure}/lib/modules"; }
     # No firmware for now
     # { name = "lib/firmware"; path = "${modulesClosure}/lib/firmware"; }
@@ -106,7 +107,7 @@ in
 
     availableKernelModules = lib.options.mkOption {
       type = lib.types.listOf lib.types.str;
-      default = [ "autofs4 " "squashfs" "virtio_net" "virtio_pci" "virtio_blk" "virtio_scsi" "virtio_balloon" "virtio_console" ];
+      default = [ "autofs4 " "squashfs" "virtio_net" "virtio_rng" "virtio_pci" "virtio_blk" "virtio_scsi" "virtio_balloon" "virtio_console" ];
     };
 
     kernelModules = lib.options.mkOption {

@@ -99,6 +99,9 @@ self: super: {
       # NOTE: We move $out/$out back to $out do undo the damage that DESTDIR did
       # Note that $out/etc exists already at this point
       postInstall = ''
+        # Generate the hwdb.bin file :P
+        # TODO: In the future; make hwdb config overridable?
+
         rm -rf $out/var
         mv $out/$out/* $out
         rm -rf $out/nix
