@@ -47,10 +47,20 @@ let
     '';
 
 
+  modprobe-init =
+    pkgs.writeText "modprobe-init.service" ''
+      [Unit]
+      DefaultDependencies=no
+      Before=sysinit.target
+      [Service]
+      ExecStart=${pkgs.busybox}/bin/ash -c "echo ${pkgs.kmod}/bin/modprobe > /proc/sys/kernel/modprobe"
+    '';
   ownUnits = pkgs.linkFarm "own-units" [
     { name = "initrd-cleanup.service"; path = "/dev/null"; } # NOTE: Just here to get us in emergency shell in right place
     { name = "systemd-update-done.service"; path = "/dev/null"; } # TODO see how we get it to work
     { name = "emergency.service"; path = "${emergency}"; }
+    { name = "modprobe-init.service"; path = "${modprobe-init}"; }
+    { name = "sysinit.target.wants/modprobe-init.service"; path = "${modprobe-init}"; }
   ];
 
   units = pkgs.symlinkJoin {
@@ -77,6 +87,7 @@ let
     { name = "init"; path = "${pkgs.systemd_}/lib/systemd/systemd"; }
     { name = "etc/systemd/system"; path = "${units}"; }
     { name = "etc/modules-load.d/modules.conf"; path = "${modules}"; }
+    { name = "etc/udev/rules.d"; path = "${pkgs.systemd_}/lib/udev/rules.d"; }
     { name = "lib/modules"; path = "${modulesClosure}/lib/modules"; }
     # No firmware for now
     # { name = "lib/firmware"; path = "${modulesClosure}/lib/firmware"; }
@@ -108,7 +119,10 @@ in
     kernel.params = [
       "rd.systemd.unit=initrd.target" # not needed in 245. See NEWS
       # "root=/dev/vda"
+      "systemd.log_level=debug"
       "rd.systemd.log_level=debug"
+      "udev.log-priority=debug"
+      "rd.udev.log-priority=debug"
     ];
     system.build.initrd = (pkgs.callPackage ../lib/make-initrd.nix) { storeContents = initrdfs; };
     # system.build.initrdfs = initrdfs;
