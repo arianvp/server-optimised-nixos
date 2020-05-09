@@ -118,7 +118,7 @@ in
   config = {
     kernel.params = [
       "rd.systemd.unit=initrd.target" # not needed in 245. See NEWS
-      # "root=/dev/vda"
+      "root=/dev/vda"
       "systemd.log_level=debug"
       "rd.systemd.log_level=debug"
       "udev.log-priority=debug"
