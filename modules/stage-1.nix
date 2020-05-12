@@ -88,7 +88,13 @@ let
     { name = "init"; path = "${pkgs.systemd_}/lib/systemd/systemd"; }
     { name = "etc/systemd/system"; path = "${units}"; }
     { name = "etc/modules-load.d/modules.conf"; path = "${modules}"; }
+
+    # TODO: Hack. need to make choice. What do we do with udev? Read from systemd package implicitly?
     { name = "etc/udev"; path = "${pkgs.systemd_}/lib/udev"; }
+    { name = "etc/sysusers.d"; path = "${pkgs.systemd_}/lib/sysusers.d"; }
+    { name = "etc/tmpfiles.d"; path = "${pkgs.systemd_}/lib/tmpfiles.d"; }
+
+
     { name = "lib/modules"; path = "${modulesClosure}/lib/modules"; }
     # No firmware for now
     # { name = "lib/firmware"; path = "${modulesClosure}/lib/firmware"; }
