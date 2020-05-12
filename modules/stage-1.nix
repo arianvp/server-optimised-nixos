@@ -1,5 +1,5 @@
 /*
-Implementation of the stage-1 init using systemd
+Implementation of the stage-1 init using systemdG
 */
 { pkgs, lib, config, ... }:
 let
@@ -55,6 +55,8 @@ let
       [Service]
       ExecStart=${pkgs.busybox}/bin/ash -c "echo ${pkgs.kmod}/bin/modprobe > /proc/sys/kernel/modprobe"
     '';
+
+  # TODO: We could use BindReadOnlyPaths= to get rid of a shared /etc instead!!! This is way cooler in my opinion :)
   ownUnits = pkgs.linkFarm "own-units" [
     { name = "initrd-cleanup.service"; path = "/dev/null"; } # NOTE: Just here to get us in emergency shell in right place
     { name = "systemd-update-done.service"; path = "/dev/null"; } # TODO see how we get it to work
@@ -79,14 +81,21 @@ let
 
   modules = pkgs.writeText "modules.conf" (pkgs.lib.strings.intersperse "\n" cfg.kernelModules);
 
+
+  # Fancy little hack to not need global path to systemd. However is it
+  # actually fancy? How do we "reload" this?
+  init = pkgs.writeShellScript "init" ''
+    SYSTEMD_UNIT_PATH=${units}: exec ${pkgs.systemd_}/lib/systemd/systemd
+  '';
+
   # Notes about initrd:
   # nixpkgs kmod is patched to read from /run/current-system/kernel-modules
   # echo ${pkgs.kmod}/bin/modprobe > /proc/sys/kernel/modprobe
 
   initrdfs = pkgs.linkFarm "initrdfs" [
     { name = "etc/initrd-release"; path = "${initrdRelease}"; }
-    { name = "init"; path = "${pkgs.systemd_}/lib/systemd/systemd"; }
-    { name = "etc/systemd/system"; path = "${units}"; }
+    { name = "init"; path = "${init}"; }
+    # { name = "etc/systemd/system"; path = "${units}"; }
     { name = "etc/modules-load.d/modules.conf"; path = "${modules}"; }
 
     # TODO: Hack. need to make choice. What do we do with udev? Read from systemd package implicitly?
@@ -149,6 +158,7 @@ in
       "udev.log-priority=debug"
       "rd.udev.log-priority=debug"
     ];
+    system.build.init = init;
     system.build.initrd = (pkgs.callPackage ../lib/make-initrd.nix) { storeContents = initrdfs; };
     # system.build.initrdfs = initrdfs;
     # system.build.units = units;
