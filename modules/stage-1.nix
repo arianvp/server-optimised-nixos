@@ -97,6 +97,7 @@ let
 
 in
 {
+  imports = [ ./systemd.nix ];
   options.stage-1 = {
     compressor = lib.options.mkOption {
       type = lib.types.str;
@@ -117,6 +118,23 @@ in
 
   };
   config = {
+    systemd = {
+      targets."sysinit".wants = [
+        "modprobe-init.service"
+      ];
+      services = {
+        "initrd-cleanup".enable = false;
+        "systemd-update-done".enable = false;
+        "modprobe-init" = {
+          unitConfig = {
+            DefaultDependencies = false;
+          };
+          serviceConfig.ExecStart = ''${pkgs.busybox}/bin/ash -c "echo ${pkgs.kmod}/bin/modprobe > /proc/sys/kernel/modprobe'';
+        };
+
+      };
+    };
+
     kernel.params = [
       "rd.systemd.unit=initrd.target" # not needed in 245. See NEWS
       "root=/dev/vda"
