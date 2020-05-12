@@ -105,7 +105,7 @@ in
   options = {
 
     systemd.package = mkOption {
-      default = pkgs.systemd;
+      default = pkgs.systemd_;
       defaultText = "pkgs.systemd";
       type = types.package;
       description = "The systemd package.";
@@ -221,7 +221,7 @@ in
   config = {
 
 
-    system.build.units = cfg.units;
+    # system.build.units = cfg.units;
 
     # Systemd provides various NSS modules to look up dynamic users, locally
     # configured IP adresses and local container hostnames.
@@ -253,7 +253,9 @@ in
     # maybe not make this configurable
     systemd.packages = [ systemd ];
 
-    environment.etc = let
+    system.build.units = generateUnits "system" cfg.units;
+
+    /*jnvironment.etc = let
       enabledUnits = filterAttrs (n: v: ! elem n cfg.suppressedSystemUnits) cfg.units;
     in
       {
@@ -275,7 +277,7 @@ in
         # "tmpfiles.d/var.conf".source = "${systemd}/example/tmpfiles.d/var.conf";
         # "tmpfiles.d/x11.conf".source = "${systemd}/example/tmpfiles.d/x11.conf";
 
-      };
+      };*/
 
     # TODO: Enable dbus
     # services.dbus.enable = true;

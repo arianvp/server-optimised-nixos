@@ -136,11 +136,7 @@ rec {
   generateUnits = generateUnits' true;
 
   generateUnits' = allowCollisions: type: units:
-    pkgs.runCommand "${type}-units"
-      {
-        preferLocalBuild = true;
-        allowSubstitutes = false;
-      } ''
+    pkgs.runCommand "${type}-units" { preferLocalBuild = true; allowSubstitutes = false; } ''
       mkdir -p $out
 
       # Symlink all units provided listed in systemd.packages.
@@ -151,15 +147,15 @@ rec {
       for k in $packages ; do unique_packages[$k]=1 ; done
 
       for i in ''${!unique_packages[@]}; do
+        echo $i
         for fn in $i/etc/systemd/${type}/* $i/lib/systemd/${type}/*; do
-          if ! [[ "$fn" =~ .wants$ ]]; then
-            if [[ -d "$fn" ]]; then
-              targetDir="$out/$(basename "$fn")"
-              mkdir -p "$targetDir"
-              ${lndir} "$fn" "$targetDir"
-            else
-              ln -s $fn $out/
-            fi
+          echo $fn
+          if [[ -d "$fn" ]]; then
+            targetDir="$out/$(basename "$fn")"
+            mkdir -p "$targetDir"
+            ${lndir} "$fn" "$targetDir"
+          else
+            ln -s $fn $out/
           fi
         done
       done

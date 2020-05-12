@@ -23,69 +23,12 @@ let
     allowMissing = false;
   };
 
-  emergency =
-    pkgs.writeText "emergency.service" ''
-      [Unit]
-      Description=Emergency Shell
-      Documentation=man:sulogin(8)
-      DefaultDependencies=no
-      Conflicts=shutdown.target
-      Conflicts=rescue.service
-      Before=shutdown.target
-      Before=rescue.service
-
-      [Service]
-      ExecStart=${pkgs.busybox}/bin/ash
-      Environment=PATH=${pkgs.busybox}/bin:${pkgs.systemd_}/bin:${pkgs.utillinuxMinimal}/bin
-      Type=idle
-      StandardInput=tty-force
-      StandardOutput=inherit
-      StandardError=inherit
-      KillMode=process
-      IgnoreSIGPIPE=no
-      SendSIGHUP=yes
-    '';
-
-
-  modprobe-init =
-    pkgs.writeText "modprobe-init.service" ''
-      [Unit]
-      DefaultDependencies=no
-      Before=sysinit.target
-      [Service]
-      ExecStart=${pkgs.busybox}/bin/ash -c "echo ${pkgs.kmod}/bin/modprobe > /proc/sys/kernel/modprobe"
-    '';
-
-  # TODO: We could use BindReadOnlyPaths= to get rid of a shared /etc instead!!! This is way cooler in my opinion :)
-  ownUnits = pkgs.linkFarm "own-units" [
-    { name = "initrd-cleanup.service"; path = "/dev/null"; } # NOTE: Just here to get us in emergency shell in right place
-    { name = "systemd-update-done.service"; path = "/dev/null"; } # TODO see how we get it to work
-    { name = "emergency.service"; path = "${emergency}"; }
-    { name = "modprobe-init.service"; path = "${modprobe-init}"; }
-    { name = "sysinit.target.wants/modprobe-init.service"; path = "${modprobe-init}"; }
-  ];
-
-  units = pkgs.symlinkJoin {
-    name = "units";
-    ignoreCollisions = true;
-    paths = [
-      # NOTE: User-provided inputs have presedence over systemd-provided ones
-      ownUnits
-      # NOTE: systemd should already read from rootlibdir correctly :)
-
-      # NOTE: SYSTEMD_UNIT_PATH= can also be set :). So we do not need global paths;
-      # at least for _units_
-      # "${pkgs.systemd_}/lib/systemd/system"
-    ];
-  };
-
   modules = pkgs.writeText "modules.conf" (pkgs.lib.strings.intersperse "\n" cfg.kernelModules);
-
 
   # Fancy little hack to not need global path to systemd. However is it
   # actually fancy? How do we "reload" this?
   init = pkgs.writeShellScript "init" ''
-    SYSTEMD_UNIT_PATH=${units}: exec ${pkgs.systemd_}/lib/systemd/systemd
+    SYSTEMD_UNIT_PATH=${config.system.build.units}: exec ${pkgs.systemd_}/lib/systemd/systemd
   '';
 
   # Notes about initrd:
@@ -97,11 +40,6 @@ let
     { name = "init"; path = "${init}"; }
     # { name = "etc/systemd/system"; path = "${units}"; }
     { name = "etc/modules-load.d/modules.conf"; path = "${modules}"; }
-
-    # TODO: Hack. need to make choice. What do we do with udev? Read from systemd package implicitly?
-    { name = "etc/udev"; path = "${pkgs.systemd_}/lib/udev"; }
-    { name = "etc/sysusers.d"; path = "${pkgs.systemd_}/lib/sysusers.d"; }
-    { name = "etc/tmpfiles.d"; path = "${pkgs.systemd_}/lib/tmpfiles.d"; }
 
 
     { name = "lib/modules"; path = "${modulesClosure}/lib/modules"; }
@@ -138,8 +76,28 @@ in
         "modprobe-init.service"
       ];
       services = {
+        "emergency".serviceConfig = {
+          ExecStart = [ "" "${pkgs.busybox}/bin/ash" ];
+          Environment = "PATH=${pkgs.busybox}/bin:${pkgs.systemd_}/bin:${pkgs.utillinuxMinimal}/bin";
+        };
         "initrd-cleanup".enable = false;
         "systemd-update-done".enable = false;
+        "systemd-udevd".serviceConfig = {
+          # for .hwdb and .rules files link files
+          BindReadOnlyPaths = [ "${pkgs.systemd_}/lib/udev:/etc/udev" "/etc/systemd/network:${pkgs.systemd_}/lib/systemd/network:/etc/systemd/network" ];
+        };
+
+        "systemd-sysuserd".serviceConfig = {
+          BindReadOnlyPaths = "${pkgs.systemd_}/lib/sysusers.d:/etc/sysusers.d";
+        };
+
+        "systemd-tmpfiles-setup".serviceConfig = {
+          BindReadOnlyPaths = "${pkgs.systemd_}/lib/tmpfiles.d:/etc/tmpfiles.d";
+        };
+        "systemd-tmpfiles-setup-dev".serviceConfig = {
+          BindReadOnlyPaths = "${pkgs.systemd_}/lib/tmpfiles.d:/etc/tmpfiles.d";
+        };
+
         "modprobe-init" = {
           unitConfig = {
             DefaultDependencies = false;
