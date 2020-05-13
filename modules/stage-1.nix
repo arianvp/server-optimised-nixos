@@ -72,10 +72,12 @@ in
   };
   config = {
     systemd = {
-      targets."sysinit".wants = [
-        "modprobe-init.service"
-      ];
+      sockets = {
+        "systemd-networkd".wantedBy = [ "sockets.target" ];
+      };
       services = {
+        "systemd-networkd".wantedBy = [ "initrd.target" ];
+        "systemd-networkd-wait-online".wantedBy = [ "network-online.target" ];
         "emergency".serviceConfig = {
           ExecStart = [ "" "${pkgs.busybox}/bin/ash" ];
           Environment = "PATH=${pkgs.busybox}/bin:${pkgs.systemd_}/bin:${pkgs.utillinuxMinimal}/bin";
@@ -87,7 +89,7 @@ in
           BindReadOnlyPaths = [ "${pkgs.systemd_}/lib/udev:/etc/udev" "/etc/systemd/network:${pkgs.systemd_}/lib/systemd/network:/etc/systemd/network" ];
         };
 
-        "systemd-sysuserd".serviceConfig = {
+        "systemd-sysusers".serviceConfig = {
           BindReadOnlyPaths = "${pkgs.systemd_}/lib/sysusers.d:/etc/sysusers.d";
         };
 
@@ -99,6 +101,7 @@ in
         };
 
         "modprobe-init" = {
+          wantedBy = [ "sysinit.target" ];
           unitConfig = {
             DefaultDependencies = false;
           };
