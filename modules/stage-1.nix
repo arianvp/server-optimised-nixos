@@ -25,6 +25,12 @@ let
 
   modules = pkgs.writeText "modules.conf" (pkgs.lib.strings.intersperse "\n" cfg.kernelModules);
 
+  network = pkgs.writeText "0-main.network" ''
+    [Match]
+    Name=ens*
+    [Network]
+    DHCP=yes
+  '';
   # Fancy little hack to not need global path to systemd. However is it
   # actually fancy? How do we "reload" this?
   init = pkgs.writeShellScript "init" ''
@@ -40,6 +46,7 @@ let
     { name = "init"; path = "${init}"; }
     # { name = "etc/systemd/system"; path = "${units}"; }
     { name = "etc/modules-load.d/modules.conf"; path = "${modules}"; }
+    { name = "etc/systemd/network/0-main.network"; path = "${network}"; }
 
 
     { name = "lib/modules"; path = "${modulesClosure}/lib/modules"; }
@@ -61,7 +68,7 @@ in
 
     availableKernelModules = lib.options.mkOption {
       type = lib.types.listOf lib.types.str;
-      default = [ "autofs4 " "squashfs" "virtio_net" "virtio_rng" "virtio_pci" "virtio_blk" "virtio_scsi" "virtio_balloon" "virtio_console" ];
+      default = [ "e1000" "autofs4 " "squashfs" "virtio_net" "virtio_rng" "virtio_pci" "virtio_blk" "virtio_scsi" "virtio_balloon" "virtio_console" ];
     };
 
     kernelModules = lib.options.mkOption {
@@ -76,7 +83,12 @@ in
         "systemd-networkd".wantedBy = [ "sockets.target" ];
       };
       services = {
-        "systemd-networkd".wantedBy = [ "initrd.target" ];
+        "systemd-networkd" = {
+          wantedBy = [ "initrd.target" ];
+          serviceConfig.BindReadOnlyPaths = [
+            "${pkgs.systemd_}/lib/systemd/network:/etc/systemd/network"
+          ];
+        };
         "systemd-networkd-wait-online".wantedBy = [ "network-online.target" ];
         "emergency".serviceConfig = {
           ExecStart = [ "" "${pkgs.busybox}/bin/ash" ];
@@ -86,7 +98,10 @@ in
         "systemd-update-done".enable = false;
         "systemd-udevd".serviceConfig = {
           # for .hwdb and .rules files link files
-          BindReadOnlyPaths = [ "${pkgs.systemd_}/lib/udev:/etc/udev" "/etc/systemd/network:${pkgs.systemd_}/lib/systemd/network:/etc/systemd/network" ];
+          BindReadOnlyPaths = [
+            "${pkgs.systemd_}/lib/udev:/etc/udev"
+            "${pkgs.systemd_}/lib/systemd/network:/etc/systemd/network"
+          ];
         };
 
         "systemd-sysusers".serviceConfig = {
