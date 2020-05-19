@@ -75,51 +75,41 @@ in
       type = lib.types.listOf lib.types.str;
       default = [];
     };
-
   };
   config = {
     systemd = {
       sockets = {
-        "systemd-networkd".wantedBy = [ "sockets.target" ];
+        systemd-networkd.wantedBy = [ "sockets.target" ];
       };
       services = {
-        "systemd-networkd" = {
+        systemd-networkd = {
+          # TODO: in stage-2 this is multi-user.target heh
           wantedBy = [ "initrd.target" ];
           serviceConfig.BindReadOnlyPaths = [
-            "${pkgs.systemd_}/lib/systemd/network:/etc/systemd/network"
+            # "${pkgs.systemd_}/lib/systemd/network:/etc/systemd/network"
           ];
         };
-        "systemd-networkd-wait-online".wantedBy = [ "network-online.target" ];
-        "emergency".serviceConfig = {
+        systemd-networkd-wait-online.wantedBy = [ "network-online.target" ];
+        emergency.serviceConfig = {
           ExecStart = [ "" "${pkgs.busybox}/bin/ash" ];
           Environment = "PATH=${pkgs.busybox}/bin:${pkgs.systemd_}/bin:${pkgs.utillinuxMinimal}/bin";
         };
-        "initrd-cleanup".enable = false;
-        "systemd-update-done".enable = false;
-        "systemd-udevd".serviceConfig = {
-          # for .hwdb and .rules files link files
-          BindReadOnlyPaths = [
-            "${pkgs.systemd_}/lib/udev:/etc/udev"
-            "${pkgs.systemd_}/lib/systemd/network:/etc/systemd/network"
-          ];
-        };
+        initrd-cleanup.enable = false;
+        systemd-update-done.enable = false;
+        systemd-udevd.serviceConfig.BindReadOnlyPaths = [
+          "${pkgs.systemd_}/lib/udev:/etc/udev"
+          "${pkgs.systemd_}/lib/systemd/network:/etc/systemd/network"
+        ];
 
-        "systemd-sysusers".serviceConfig = {
-          BindReadOnlyPaths = "${pkgs.systemd_}/lib/sysusers.d:/etc/sysusers.d";
-        };
+        systemd-sysusers.serviceConfig.BindReadOnlyPaths =
+          "${pkgs.systemd_}/lib/sysusers.d:/etc/sysusers.d";
+        systemd-tmpfiles-setup.serviceConfig.BindReadOnlyPaths =
+          "${pkgs.systemd_}/lib/tmpfiles.d:/etc/tmpfiles.d";
+        systemd-tmpfiles-setup-dev.serviceConfig.BindReadOnlyPaths = "${pkgs.systemd_}/lib/tmpfiles.d:/etc/tmpfiles.d";
 
-        "systemd-tmpfiles-setup".serviceConfig = {
-          BindReadOnlyPaths = "${pkgs.systemd_}/lib/tmpfiles.d:/etc/tmpfiles.d";
-        };
-        "systemd-tmpfiles-setup-dev".serviceConfig = {
-          BindReadOnlyPaths = "${pkgs.systemd_}/lib/tmpfiles.d:/etc/tmpfiles.d";
-        };
-
-        "modprobe-init" = {
+        modprobe-init = {
           wantedBy = [ "sysinit.target" ];
-          unitConfig = {
-            DefaultDependencies = false;
-          };
+          unitConfig.DefaultDependencies = false;
           serviceConfig.ExecStart = ''${pkgs.busybox}/bin/ash -c "echo ${pkgs.kmod}/bin/modprobe > /proc/sys/kernel/modprobe'';
         };
 
@@ -127,7 +117,6 @@ in
     };
 
     kernel.params = [
-      "rd.systemd.unit=initrd.target" # not needed in 245. See NEWS
       "root=/dev/vda"
       "systemd.log_level=debug"
       "rd.systemd.log_level=debug"
