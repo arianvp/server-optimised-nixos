@@ -253,31 +253,9 @@ in
     # maybe not make this configurable
     systemd.packages = [ systemd ];
 
+    # TODO: No, instead this should idk set something that makes... sense?
     system.build.units = generateUnits "system" cfg.units;
 
-    /*jnvironment.etc = let
-      enabledUnits = filterAttrs (n: v: ! elem n cfg.suppressedSystemUnits) cfg.units;
-    in
-      {
-        "systemd/system".source = generateUnits "system" enabledUnits enabledUpstreamSystemUnits upstreamSystemWants;
-
-        # "systemd/user".source = generateUnits "user" cfg.user.units upstreamUserUnits [];
-
-
-        # TODO: tmpfiles?
-        # "tmpfiles.d/home.conf".source = "${systemd}/example/tmpfiles.d/home.conf";
-        # "tmpfiles.d/journal-nocow.conf".source = "${systemd}/example/tmpfiles.d/journal-nocow.conf";
-        # "tmpfiles.d/portables.conf".source = "${systemd}/example/tmpfiles.d/portables.conf";
-        # "tmpfiles.d/static-nodes-permissions.conf".source = "${systemd}/example/tmpfiles.d/static-nodes-permissions.conf";
-        # "tmpfiles.d/systemd.conf".source = "${systemd}/example/tmpfiles.d/systemd.conf";
-        # "tmpfiles.d/systemd-nologin.conf".source = "${systemd}/example/tmpfiles.d/systemd-nologin.conf";
-        # "tmpfiles.d/systemd-nspawn.conf".source = "${systemd}/example/tmpfiles.d/systemd-nspawn.conf";
-        # "tmpfiles.d/systemd-tmp.conf".source = "${systemd}/example/tmpfiles.d/systemd-tmp.conf";
-        # "tmpfiles.d/tmp.conf".source = "${systemd}/example/tmpfiles.d/tmp.conf";
-        # "tmpfiles.d/var.conf".source = "${systemd}/example/tmpfiles.d/var.conf";
-        # "tmpfiles.d/x11.conf".source = "${systemd}/example/tmpfiles.d/x11.conf";
-
-      };*/
 
     # TODO: Enable dbus
     # services.dbus.enable = true;
@@ -311,18 +289,6 @@ in
       );
 
 
-    # Generate timer units for all services that have a ‘startAt’ value.
-    systemd.timers =
-      mapAttrs (
-        name: service:
-          {
-            wantedBy = [ "timers.target" ];
-            timerConfig.OnCalendar = service.startAt;
-          }
-      )
-        (filterAttrs (name: service: service.enable && service.startAt != []) cfg.services);
-
-    # Some overrides to upstream units.
     # TODO: activation logic. Only restart units that are After=sysinit.target :)
   };
 
