@@ -101,6 +101,10 @@ in
           "${pkgs.systemd_}/lib/systemd/network:/etc/systemd/network"
         ];
 
+        systemd-sysctld.serviceConfig.BindReadOnlyPaths = [
+          "${pkgs.systemd_}/lib/sysctl.d:/etc/sysctl.d"
+        ];
+
         systemd-sysusers.serviceConfig.BindReadOnlyPaths =
           "${pkgs.systemd_}/lib/sysusers.d:/etc/sysusers.d";
         systemd-tmpfiles-setup.serviceConfig.BindReadOnlyPaths =
