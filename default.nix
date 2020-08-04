@@ -1,7 +1,7 @@
 { config ? ./config/example.nix
 , nixpkgs ? (import ./nix/sources.nix).nixpkgs
-, pkgs ? import nixpkgs {
-    overlays = map import [ ./overlays/systemd.nix ];
+, pkgs ? import ../nixos/nixpkgs {
+    overlays = map import [ ./overlays/systemd.nix  ./overlays/image-tools.nix ];
   }
 }:
 {

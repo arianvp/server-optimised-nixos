@@ -1,10 +1,11 @@
 { pkgs, config, ... }:
-let 
+let
   cfg = config.system.build;
-  makeSquashfs = storeContents: pkgs.callPackage ../lib/make-squashfs.nix { inherit storeContents; };
-in
-{
-  config.system.build.squashfs = makeSquashfs {
+  squashfs = pkgs.makeSquashfs {
     storeContents = pkgs.writeText "hey" "yo";
   };
+in
+{
+  config.system.build.verity = pkgs.makeVerity squashfs;
+  config.system.build.squashfs = squashfs;
 }
