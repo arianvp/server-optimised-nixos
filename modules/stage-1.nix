@@ -128,7 +128,7 @@ in
       "rd.udev.log-priority=debug"
     ];
     system.build.init = init;
-    system.build.initrd = (pkgs.callPackage ../lib/make-initrd.nix) { storeContents = initrdfs; };
+    system.build.initrd = pkgs.makeInitrd  { storeContents = initrdfs; };
     # system.build.initrdfs = initrdfs;
     # system.build.units = units;
     # system.build.modulesClosure = modulesClosure;
