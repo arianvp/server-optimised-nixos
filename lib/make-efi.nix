@@ -1,5 +1,7 @@
 { stdenv, systemd, makeSquashfs, makeVerity, utillinux }:
-# { boot, root, verity }:
+
+# makeEFI :: { esp :: drv, root ::: drv} -> drv
+{ esp, root }:
 let
   partitionType = {
     root = {
@@ -14,9 +16,12 @@ let
     esp = "c12a7328-f81f-11d2-ba4b-00a0c93ec93b";
   };
 
-  contents = makeSquashfs { storeContents = systemd; };
-  verity = makeVerity contents;
+  verity = makeVerity root;
 
+  espType = partitionType.esp;
+  inherit (stdenv.hostPlatform) system;
+  rootType = partitionType.root.${system};
+  verityType = partitionType.verity.${system};
 in
 
 stdenv.mkDerivation {
@@ -25,20 +30,40 @@ stdenv.mkDerivation {
     utillinux
   ];
   buildCommand = ''
-    squashfsSize=$(du -B 512 --apparent-size ${contents} | awk '{ print $1 }')
-    truncate --size $(( (2048 + $squashfsSize + 4096 + 1024) * 512 )) $out
-    du -h  --apparent-size $out
-    sfdisk $out <<EOF
-    label: gpt
+    set -ex
+    function size {
+      du --block-size 512 --apparent-size $1 | awk '{ print $1}'
+    }
+    espSize=$(size ${esp})
+    echo $espSize
+    rootSize=$(size ${root})
+    echo $rootSize
+    veritySize=$(size ${verity}/verity)
+    echo $veritySize
 
-    size=$squashfsSize type=${partitionType.root.${stdenv.targetPlatform.system}}
-    size=4096 type=${partitionType.esp}
+    fullSize=$((2048+2048+$espSize+$rootSize+$veritySize)))
+    echo $fullSize
+    truncate --size $(( $fullSize * 512 )) out.img
+
+    hash1=$(cat ${verity}/hash | cut -c1-32  | sed 's/./&-/8;s/./&-/13;s/./&-/18;s/./&-/23')
+    hash2=$(cat ${verity}/hash | cut -c33-64 | sed 's/./&-/8;s/./&-/13;s/./&-/18;s/./&-/23')
+
+    sfdisk out.img <<EOF
+    label: gpt
+    size=$espSize,    type=${espType},    name=${esp}
+    size=$rootSize,   type=${rootType},   name=${root},   uuid=$hash1, attrs=GUID:60
+    size=$veritySize, type=${verityType}, name=${verity}, uuid=$hash2, attrs=GUID:60
     EOF
 
-    eval $(partx $out -o START,SECTORS --nr 1 --pairs)
-    dd conv=notrunc if=${contents} of=$out seek=$START count=$SECTORS conv=notrunc
+    cp out.img $out
 
-    # eval $(partx $out -o START,SECTORS --nr 2 --pairs)
-    # dd conv=notrunc if=/dev/zero of=$out seek=$START count=$SECTORS conv=notrunc
+    #eval $(partx $out --output START,SECTORS --nr 1 --pairs)
+    #dd conv=notrunc if=${esp}           of=$out seek=$START count=$SECTORS conv=notrunc
+
+    #eval $(partx $out --output START,SECTORS --nr 2 --pairs)
+    #dd conv=notrunc if=${root}          of=$out seek=$START count=$SECTORS conv=notrunc
+
+    #eval $(partx $out --output START,SECTORS --nr 3 --pairs)
+    #dd conv=notrunc if=${verity}/verity of=$out seek=$START count=$SECTORS conv=notrunc
   '';
 }
