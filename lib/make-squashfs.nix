@@ -18,8 +18,22 @@ stdenv.mkDerivation {
       # for nix-store --load-db.
       cp $closureInfo/registration nix-path-registration
 
+      mkdir -p rootfs/etc
+
+      touch rootfs/etc/machine-id
+      cat <<EOF > rootfs/etc/os-release
+      NAME=Server Optimised NixOS
+      EOF
+
+      echo hello > rootfs/etc/hostname
+
+      mkdir -p rootfs/boot
+
+      find rootfs
+
+
       # Generate the squashfs image.
-      mksquashfs nix-path-registration $(cat $closureInfo/store-paths) $out \
-        -keep-as-directory -all-root -b 1048576 -comp xz -Xdict-size 100%
+      mksquashfs rootfs/*  $out \
+        -info -keep-as-directory -all-root -b 1048576 -comp xz -Xdict-size 100%
     '';
 }

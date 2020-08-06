@@ -41,29 +41,33 @@ stdenv.mkDerivation {
     veritySize=$(size ${verity}/verity)
     echo $veritySize
 
-    fullSize=$((2048+2048+$espSize+$rootSize+$veritySize)))
-    echo $fullSize
-    truncate --size $(( $fullSize * 512 )) out.img
+    reserved1=2048
+    reserved2=2048
 
+    fullSize=$(($reserved1+$reserved2+$espSize+$rootSize+$veritySize))
+    echo $fullSize
+    truncate --size $(( $fullSize * 512 )) $out
+
+    hash=$(cat ${verity}/hash)
     hash1=$(cat ${verity}/hash | cut -c1-32  | sed 's/./&-/8;s/./&-/13;s/./&-/18;s/./&-/23')
     hash2=$(cat ${verity}/hash | cut -c33-64 | sed 's/./&-/8;s/./&-/13;s/./&-/18;s/./&-/23')
 
-    sfdisk out.img <<EOF
+    sfdisk $out <<EOF
     label: gpt
-    size=$espSize,    type=${espType},    name=${esp}
-    size=$rootSize,   type=${rootType},   name=${root},   uuid=$hash1, attrs=GUID:60
-    size=$veritySize, type=${verityType}, name=${verity}, uuid=$hash2, attrs=GUID:60
+    start=$reserved1,                         size=$espSize,    type=${espType},    name=${esp}
+    start=$(($reserved1+$espSize)),           size=$rootSize,   type=${rootType},   name=${root},   uuid=$hash1, attrs=GUID:60
+    start=$(($reserved1+$espSize+$rootSize)), size=$veritySize, type=${verityType}, name=${verity}, uuid=$hash2, attrs=GUID:60
     EOF
 
-    cp out.img $out
 
-    #eval $(partx $out --output START,SECTORS --nr 1 --pairs)
-    #dd conv=notrunc if=${esp}           of=$out seek=$START count=$SECTORS conv=notrunc
+    eval $(partx $out --output START,SECTORS --nr 1 --pairs)
+    dd conv=notrunc if=${esp}           of=$out seek=$START count=$SECTORS conv=notrunc
 
-    #eval $(partx $out --output START,SECTORS --nr 2 --pairs)
-    #dd conv=notrunc if=${root}          of=$out seek=$START count=$SECTORS conv=notrunc
+    eval $(partx $out --output START,SECTORS --nr 2 --pairs)
+    dd conv=notrunc if=${root}          of=$out seek=$START count=$SECTORS conv=notrunc
 
-    #eval $(partx $out --output START,SECTORS --nr 3 --pairs)
-    #dd conv=notrunc if=${verity}/verity of=$out seek=$START count=$SECTORS conv=notrunc
+    eval $(partx $out --output START,SECTORS --nr 3 --pairs)
+    dd conv=notrunc if=${verity}/verity of=$out seek=$START count=$SECTORS conv=notrunc
+
   '';
 }

@@ -3,5 +3,12 @@ self: super: {
   makeInitrd = self.callPackage ../lib/make-initrd.nix {};
   makeVerity = self.callPackage ../lib/make-verity.nix {};
   makeEFI = self.callPackage ../lib/make-efi.nix {};
+  makeVFAT = self.callPackage ../lib/make-vfat.nix {};
 
+  example = self.callPackage ../example.nix {};
+
+  lol = self.makeVFAT {
+    size = 1024*1024*1024;
+    files = { "EFI\\Linux" = ../README.md; };
+  };
 }
