@@ -4,7 +4,7 @@ self: super: {
 
   # use old systemd
 
-  systemd_ = self.callPackage (
+  systemd = self.callPackage (
     { stdenv
     , acl
     , coreutils
@@ -15,6 +15,7 @@ self: super: {
     , libcap
     , libuuid
     , linuxHeaders
+    , cryptsetup
     , m4
     , meson
     , ninja
@@ -40,9 +41,10 @@ self: super: {
         meson
         ninja
         pkgconfig
+        cryptsetup
         patchelf
-        # TODO needed for xml-helper.py but why is python a build dependency in the first place? Unwieldy for bootstrap
 
+        # TODO needed for xml-helper.py but why is python a build dependency in the first place? Unwieldy for bootstrap
         (buildPackages.python3Packages.python.withPackages (ps: with ps; [ lxml ]))
 
       ];
@@ -53,6 +55,7 @@ self: super: {
         libuuid
         linuxHeaders
         pam
+        cryptsetup
       ];
       doCheck = false;
       enableParallelBuilding = true;
