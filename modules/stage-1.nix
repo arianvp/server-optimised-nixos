@@ -34,7 +34,7 @@ let
   # Fancy little hack to not need global path to systemd. However is it
   # actually fancy? How do we "reload" this?
   init = pkgs.writeShellScript "init" ''
-    SYSTEMD_UNIT_PATH=${config.system.build.units}: exec ${pkgs.systemd_}/lib/systemd/systemd
+    SYSTEMD_UNIT_PATH=${config.system.build.units}: exec ${pkgs.systemd}/lib/systemd/systemd
   '';
 
   # Notes about initrd:
@@ -86,30 +86,30 @@ in
           # TODO: in stage-2 this is multi-user.target heh
           wantedBy = [ "initrd.target" ];
           serviceConfig.BindReadOnlyPaths = [
-            # "${pkgs.systemd_}/lib/systemd/network:/etc/systemd/network"
+            # "${pkgs.systemd}/lib/systemd/network:/etc/systemd/network"
           ];
         };
         systemd-networkd-wait-online.wantedBy = [ "network-online.target" ];
         emergency.serviceConfig = {
           ExecStart = [ "" "${pkgs.busybox}/bin/ash" ];
-          Environment = "PATH=${pkgs.busybox}/bin:${pkgs.systemd_}/bin:${pkgs.utillinuxMinimal}/bin";
+          Environment = "PATH=${pkgs.busybox}/bin:${pkgs.systemd}/bin:${pkgs.utillinuxMinimal}/bin";
         };
         initrd-cleanup.enable = false;
         systemd-update-done.enable = false;
         systemd-udevd.serviceConfig.BindReadOnlyPaths = [
-          "${pkgs.systemd_}/lib/udev:/etc/udev"
-          "${pkgs.systemd_}/lib/systemd/network:/etc/systemd/network"
+          "${pkgs.systemd}/lib/udev:/etc/udev"
+          "${pkgs.systemd}/lib/systemd/network:/etc/systemd/network"
         ];
 
         systemd-sysctld.serviceConfig.BindReadOnlyPaths = [
-          "${pkgs.systemd_}/lib/sysctl.d:/etc/sysctl.d"
+          "${pkgs.systemd}/lib/sysctl.d:/etc/sysctl.d"
         ];
 
         systemd-sysusers.serviceConfig.BindReadOnlyPaths =
-          "${pkgs.systemd_}/lib/sysusers.d:/etc/sysusers.d";
+          "${pkgs.systemd}/lib/sysusers.d:/etc/sysusers.d";
         systemd-tmpfiles-setup.serviceConfig.BindReadOnlyPaths =
-          "${pkgs.systemd_}/lib/tmpfiles.d:/etc/tmpfiles.d";
-        systemd-tmpfiles-setup-dev.serviceConfig.BindReadOnlyPaths = "${pkgs.systemd_}/lib/tmpfiles.d:/etc/tmpfiles.d";
+          "${pkgs.systemd}/lib/tmpfiles.d:/etc/tmpfiles.d";
+        systemd-tmpfiles-setup-dev.serviceConfig.BindReadOnlyPaths = "${pkgs.systemd}/lib/tmpfiles.d:/etc/tmpfiles.d";
 
         modprobe-init = {
           wantedBy = [ "sysinit.target" ];
