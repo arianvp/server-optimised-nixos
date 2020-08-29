@@ -1,4 +1,4 @@
-{ stdenv, systemd, makeSquashfs, makeVerity, utillinux }:
+{ stdenv, systemd,  makeVerity, utillinux }:
 
 # makeEFI :: { esp :: drv, root ::: drv} -> drv
 { esp, root }:
