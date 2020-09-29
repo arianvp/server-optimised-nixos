@@ -10,6 +10,7 @@ stdenv.mkDerivation {
     mmd -i $out ::EFI/Linux
     mmd -i $out ::EFI/systemd
     mmd -i $out ::EFI/BOOT
+    mmd -i $out ::loader
 
   '' + lib.concatStrings (lib.mapAttrsToList (target: source: "mcopy -i $out ${source} ::${target}\n") files);
 }

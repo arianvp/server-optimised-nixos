@@ -122,6 +122,8 @@ in
 
     kernel.params = [
       "root=/dev/vda"
+      "console=ttyS0"
+      "panic=-1"
       "systemd.log_level=debug"
       "rd.systemd.log_level=debug"
       "udev.log-priority=debug"
