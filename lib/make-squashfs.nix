@@ -1,8 +1,7 @@
-{ stdenv, squashfsTools, closureInfo
+{ stdenv, squashfsTools, closureInfo }:
 
-, # The root directory of the squashfs filesystem is filled with the
-  # closures of the Nix store paths listed here.
-}:
+# The root directory of the squashfs filesystem is filled with the
+# closures of the Nix store paths listed here.
 { storeContents }:
 
 stdenv.mkDerivation {
