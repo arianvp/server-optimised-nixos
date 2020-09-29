@@ -6,5 +6,10 @@ stdenv.mkDerivation {
   buildCommand = ''
     truncate --size ${toString size} $out
     mkfs.vfat -F32 $out
-  '' + lib.concatStrings (lib.mapAttrsToList (target: source: "mcopy -i $out ${source} ::${target}") files);
+    mmd -i $out ::EFI
+    mmd -i $out ::EFI/Linux
+    mmd -i $out ::EFI/systemd
+    mmd -i $out ::EFI/BOOT
+
+  '' + lib.concatStrings (lib.mapAttrsToList (target: source: "mcopy -i $out ${source} ::${target}\n") files);
 }

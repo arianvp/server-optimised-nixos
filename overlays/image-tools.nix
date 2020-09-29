@@ -4,6 +4,7 @@ self: super: {
   makeVerity = self.callPackage ../lib/make-verity.nix {};
   makeEFI = self.callPackage ../lib/make-efi.nix {};
   makeVFAT = self.callPackage ../lib/make-vfat.nix {};
+  makeUnifiedKernelImage = self.callPackage ../lib/make-unified-kernel-image.nix {};
 
   example = self.callPackage ../example.nix {};
 

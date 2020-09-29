@@ -16,6 +16,7 @@ self: super: {
     , libuuid
     , linuxHeaders
     , cryptsetup
+    , gnu-efi
     , m4
     , meson
     , ninja
@@ -41,8 +42,8 @@ self: super: {
         meson
         ninja
         pkgconfig
-        cryptsetup
         patchelf
+        gnu-efi
         (python3.withPackages (p: [ p.lxml ]))
 
       ];
@@ -96,6 +97,11 @@ self: super: {
         "-Dsysvinit-path="
         "-Dsysvrcnd-path="
         "-Dldconfig=false"
+        "-Defi=true"
+        "-Dgnu-efi=true"
+        "-Defi-libdir=${gnu-efi}/lib"
+        "-Defi-includedir=${gnu-efi}/include/efi"
+        "-Defi-ldsdir=${gnu-efi}/lib"
       ];
 
       # NOTE: We move $out/$out back to $out do undo the damage that DESTDIR did
