@@ -13,7 +13,9 @@ in
       ID=nixos
       VERSION_ID=0.0.1
     '';
-    cmdline = pkgs.writeText "cmdline" (toString config.kernel.params);
+    cmdline = pkgs.runCommand "cmdline" {} ''
+      echo -n "roothash=$(cat ${config.system.build.image.verity}/hash) ${toString config.kernel.params}" > $out
+    '';
     initrd = config.system.build.initrd;
     kernel = config.system.build.kernel;
   };
@@ -41,7 +43,7 @@ in
         "EFI/systemd/systemd-bootx64.efi" = "${pkgs.systemd}/lib/systemd/boot/efi/systemd-bootx64.efi";
         "loader/loader.conf" = pkgs.writeText "loader.conf" ''
           timeout 10
-          editor no
+          # editor no
         '';
       };
     };

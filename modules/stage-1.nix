@@ -55,6 +55,11 @@ let
     { name = "sbin/modprobe"; path = "${pkgs.kmod}/bin/modprobe"; }
   ];
 
+  rules = pkgs.symlinkJoin {
+    name = "rules";
+    paths = [ pkgs.lvm2 pkgs.systemd ];
+  };
+
 in
 {
   imports = [ ./systemd.nix ];
@@ -68,7 +73,7 @@ in
 
     availableKernelModules = lib.options.mkOption {
       type = lib.types.listOf lib.types.str;
-      default = [ "e1000" "autofs4 " "squashfs" "virtio_net" "virtio_rng" "virtio_pci" "virtio_blk" "virtio_scsi" "virtio_balloon" "virtio_console" ];
+      default = [ "dm_verity" "dm_mod" "e1000" "autofs4 " "squashfs" "virtio_net" "virtio_rng" "virtio_pci" "virtio_blk" "virtio_scsi" "virtio_balloon" "virtio_console" ];
     };
 
     kernelModules = lib.options.mkOption {
@@ -97,7 +102,7 @@ in
         initrd-cleanup.enable = false;
         systemd-update-done.enable = false;
         systemd-udevd.serviceConfig.BindReadOnlyPaths = [
-          "${pkgs.systemd}/lib/udev:/etc/udev"
+          "${rules}/lib/udev:/etc/udev"
           "${pkgs.systemd}/lib/systemd/network:/etc/systemd/network"
         ];
 
@@ -121,7 +126,6 @@ in
     };
 
     kernel.params = [
-      "root=/dev/vda"
       "console=ttyS0"
       "panic=-1"
       "systemd.log_level=debug"
