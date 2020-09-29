@@ -73,7 +73,7 @@ in
 
     availableKernelModules = lib.options.mkOption {
       type = lib.types.listOf lib.types.str;
-      default = [ "dm_verity" "dm_mod" "e1000" "autofs4 " "squashfs" "virtio_net" "virtio_rng" "virtio_pci" "virtio_blk" "virtio_scsi" "virtio_balloon" "virtio_console" ];
+      default = [ "dm_verity" "dm_mod" "e1000" "autofs4 " "squashfs" "virtio_net" "virtio_rng" "virtio_pci" "virtio_blk" "virtio_scsi" "virtio_balloon" "virtio_console" "af_packet" ];
     };
 
     kernelModules = lib.options.mkOption {
