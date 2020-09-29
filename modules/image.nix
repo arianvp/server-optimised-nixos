@@ -19,26 +19,12 @@ in
     initrd = config.system.build.initrd;
     kernel = config.system.build.kernel;
   };
-  config.system.build.stub2 = pkgs.makeUnifiedKernelImage {
-    version = "0.0.2";
-    os-release = pkgs.writeText "os-release" ''
-      NAME=Server Optimised NixOS
-      PRETTY_NAME=Server Optimised NixOS (0.0.2)
-      ID=nixos
-      VERSION_ID=0.0.2
-    '';
-    cmdline = pkgs.writeText "cmdline" (toString config.kernel.params);
-    initrd = config.system.build.initrd;
-    kernel = config.system.build.kernel;
-  };
   config.system.build.image = pkgs.makeEFI {
     esp = pkgs.makeVFAT {
       size = 1024 * 1024 * 1024;
       files = {
-        # TODO: Add Systemd-boot
         # TODO This is a bit naughty; and should move into make-esp.nix once make-vat.nix is renamed to it. Then we do not need this hashmap unsafe hack
         "EFI/Linux/${builtins.baseNameOf (builtins.unsafeDiscardStringContext config.system.build.stub)}" = config.system.build.stub;
-        "EFI/Linux/${builtins.baseNameOf (builtins.unsafeDiscardStringContext config.system.build.stub2)}" = config.system.build.stub2;
         "EFI/BOOT/BOOTX64.EFI" = "${pkgs.systemd}/lib/systemd/boot/efi/systemd-bootx64.efi";
         "EFI/systemd/systemd-bootx64.efi" = "${pkgs.systemd}/lib/systemd/boot/efi/systemd-bootx64.efi";
         "loader/loader.conf" = pkgs.writeText "loader.conf" ''
