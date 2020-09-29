@@ -1,4 +1,4 @@
-{ lib, stdenv, dosfstools, mtools, closureInfo }:
+{ lib, stdenv, dosfstools, mtools }:
 { size, files }:
 stdenv.mkDerivation {
   name = "vfat";

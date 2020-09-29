@@ -1,0 +1,13 @@
+https://github.com/NixOS/nixpkgs/commit/244ed6ae710553cb1392b1a5c4538e9e47b44cd6
+
+^ This needs to be reverted
+
+See https://github.com/systemd/systemd/blob/master/docs/UIDS-GIDS.md#notes-on-resolvability-of-user-and-group-names
+
+Instead:
+
+nscd.wants = [ "nss-lookup.target" "nss-user-lookup.target" ];
+nscd.before = [ "nss-lookup.target" "nss-user-lookup.target" ];
+
+
+is there a big difference? Not really; because nscd in our case is _always_ needed anyway

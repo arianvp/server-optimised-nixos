@@ -3,7 +3,7 @@
 , # The root directory of the squashfs filesystem is filled with the
   # closures of the Nix store paths listed here.
 }:
-{ storeContents ? [] }:
+{ storeContents }:
 
 stdenv.mkDerivation {
   name = "squashfs.img";

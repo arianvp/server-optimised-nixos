@@ -22,17 +22,17 @@ self: super: {
     , pam
     , pkgconfig
     , patchelf
-    , buildPackages # TODO remove?
+    , python3 # TODO remove? This was buildPackages.python3 before by the way
     }: stdenv.mkDerivation {
       version = "245.3";
       pname = "systemd";
       # src = /home/arian/Projects/systemd;
-       src = fetchFromGitHub {
-         owner = "systemd";
-         repo = "systemd-stable";
-         rev = "0f5047b7d393cfba37f91e25cae559a0bc910582";
-         sha256 = "0wyh14gbvvpgdmk1mjgpxr9i4pv1i9n7pnwpa0gvjh6hq948fyn2";
-       };
+      src = fetchFromGitHub {
+        owner = "systemd";
+        repo = "systemd-stable";
+        rev = "0f5047b7d393cfba37f91e25cae559a0bc910582";
+        sha256 = "0wyh14gbvvpgdmk1mjgpxr9i4pv1i9n7pnwpa0gvjh6hq948fyn2";
+      };
       nativeBuildInputs = [
         coreutils
         getent
@@ -43,9 +43,7 @@ self: super: {
         pkgconfig
         cryptsetup
         patchelf
-
-        # TODO needed for xml-helper.py but why is python a build dependency in the first place? Unwieldy for bootstrap
-        (buildPackages.python3Packages.python.withPackages (ps: with ps; [ lxml ]))
+        (python3.withPackages (p: [ p.lxml ]))
 
       ];
       buildInputs = [
@@ -77,21 +75,22 @@ self: super: {
         done
       '';
 
-      # NOTE: If we set DESTDIR to $out it installs everything to $out/$out but the
-      # library paths etc are correct!  We want to configure systemd to read
-      # from /etc but write to $out/etc This is the hack that seems to make
-      # that work as everything ends upt in $out/$out and etc ends up in
-      # $out/etc and we fix it up at the end
+      # Tricks systemd in not generating catalog and hwdb.
+      # TODO: Actually gneerate these?!
       preInstall = ''
-        export DESTDIR="$out"
+        export DESTDIR=${placeholder "out"}
       '';
+
+      dontAddPrefix = true;
 
       # Systemd will read units from systemunitdir which is  rootprefixdir+lib/systemd/system
       mesonFlags = [
         "-Dsplit-usr=false" # This just seems to make things more complicated
         "-Dsplit-bin=false"
+        "-Dprefix=${placeholder "out"}"
         "-Drootprefix=${placeholder "out"}"
         "-Dsysconfdir=/etc" # NOTE: This is on purpose!!
+        "-Dcreate-log-dirs=false"
         "-Dtests=false"
         "-Dinstall-tests=false"
         "-Dsysvinit-path="
@@ -108,15 +107,15 @@ self: super: {
         rm -rf $out/var
         mv $out/$out/* $out
         rm -rf $out/nix
-        rm -rf $out/lib/systemd/tests
+        # rm -rf $out/lib/systemd/tests
       '';
 
       # NOTE: We should upstream this I guess?
 
       # Patch dbus and systemd units
       postFixup = ''
-        find $out/share/dbus-1/system-services -type f -name '*.service' -exec \
-          sed -i 's,/bin/false,${coreutils}/bin/false,g' {} \;
+        # find $out/share/dbus-1/system-services -type f -name '*.service' -exec \
+        # sed -i 's,/bin/false,${coreutils}/bin/false,g' {} \;
 
         #find $out/lib/systemd/system -type -f -name '*.service' -exec \
         #  sed -i 's,{} ;

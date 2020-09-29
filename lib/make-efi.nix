@@ -24,13 +24,14 @@ let
   verityType = partitionType.verity.${system};
 in
 
+# TODO: runCommand
 stdenv.mkDerivation {
   name = "efi";
   nativeBuildInputs = [
     utillinux
   ];
+  passthru.verity = verity;
   buildCommand = ''
-    set -ex
     function size {
       du --block-size 512 --apparent-size $1 | awk '{ print $1}'
     }

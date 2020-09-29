@@ -1,10 +1,10 @@
-{ pkgs, lib,  modules, check ? true}:
+{ pkgs, hostPkgs, lib,  modules, check ? true}:
 let
   commonConfig = rec {
     _file = ./eval-config.nix;
     key = _file;
     _module = {
-      args = { inherit pkgs; };
+      args = { inherit pkgs hostPkgs; };
       inherit check;
     };
   };
