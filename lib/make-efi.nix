@@ -1,4 +1,4 @@
-{ stdenv, systemd,  makeVerity, utillinux }:
+{ stdenv, runCommand, systemd, makeVerity, utillinux }:
 
 # makeEFI :: { esp :: drv, root ::: drv} -> drv
 { esp, root }:
@@ -24,14 +24,11 @@ let
   verityType = partitionType.verity.${system};
 in
 
-# TODO: runCommand
-stdenv.mkDerivation {
-  name = "efi";
-  nativeBuildInputs = [
-    utillinux
-  ];
+runCommand "efi" {
+  nativeBuildInputs = [ utillinux ];
   passthru.verity = verity;
-  buildCommand = ''
+}
+  ''
     function size {
       du --block-size 512 --apparent-size $1 | awk '{ print $1}'
     }
@@ -70,5 +67,4 @@ stdenv.mkDerivation {
     eval $(partx $out --output START,SECTORS --nr 3 --pairs)
     dd conv=notrunc if=${verity}/verity of=$out seek=$START count=$SECTORS conv=notrunc
 
-  '';
-}
+  ''

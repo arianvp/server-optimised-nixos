@@ -1,8 +1,6 @@
-{ stdenv
-, cpio
-, closureInfo
-} :
-{ storeContents ? [] }:
+{ stdenv , cpio , closureInfo }:
+# makeInitrd : drv -> drv
+{ storeContents }:
 stdenv.mkDerivation {
   name = "initrd";
   nativeBuildInputs = [ cpio ];
