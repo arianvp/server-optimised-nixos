@@ -99,7 +99,7 @@ in
           ExecStart = [ "" "${pkgs.busybox}/bin/ash" ];
           Environment = "PATH=${pkgs.busybox}/bin:${pkgs.systemd}/bin:${pkgs.utillinuxMinimal}/bin";
         };
-        initrd-cleanup.enable = false;
+        initrd-cleanup.enable = true;
         systemd-update-done.enable = false;
         systemd-udevd.serviceConfig.BindReadOnlyPaths = [
           "${rules}/lib/udev:/etc/udev"
