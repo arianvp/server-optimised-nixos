@@ -11,21 +11,27 @@ let
   emptyfile = pkgs.runCommand "emptyfile" {} "touch $out";
 
   rootfs = pkgs.linkFarm "rootfs" [
-    { name = "etc/os-release"; path = "${os-release}"; }
+    # { name = "etc/os-release"; path = "${os-release}"; }
 
     # An empty machine-id will cause systemd to temporarily bind-mount a read-only machine-id
     # The real question is though; will this work with symlinks? lets find out
-    { name = "etc/machine-id"; path = "${emptyfile}"; }
-    { name = "etc/localtime"; path = "${emptyfile}"; }
-    { name = "etc/resolv.conf"; path = "${emptyfile}"; }
+    # { name = "etc/machine-id"; path = "${emptyfile}"; }
+
+    # TODO: These needed to be there? systemd-nspawn insists on mounting them; which it has no business in doing. patch
+    # { name = "etc/localtime"; path = "${emptyfile}"; }
+    # { name = "etc/resolv.conf"; path = "${emptyfile}"; }
 
     # TODO: mimick, or abstract away stage-1 into stage-2? this is very similar!
-    { name = "sbin/init"; path = "${pkgs.systemd}/lib/systemd/systemd"; }
+    # { name = "sbin/init"; path = "${pkgs.systemd}/lib/systemd/systemd"; }
+
+    { name = "sbin/init"; path = "${config.stage-2.system.build.toplevel}/init"; }
+
     # TODO I don't remember why this was needed. but we need it? lets fix it?
-    { name = "sbin/modprobe"; path = "${pkgs.kmod}/bin/modprobe"; }
+    # { name = "sbin/modprobe"; path = "${pkgs.kmod}/bin/modprobe"; }
   ];
 
   squashfs = pkgs.makeSquashfs {
+    inherit os-release;
     storeContents = rootfs;
   };
 in

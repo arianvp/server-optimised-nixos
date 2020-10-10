@@ -2,7 +2,7 @@
 
 # The root directory of the squashfs filesystem is filled with the
 # closures of the Nix store paths listed here.
-{ storeContents }:
+{ os-release, storeContents }:
 
 stdenv.mkDerivation {
   name = "squashfs.img";
@@ -13,13 +13,9 @@ stdenv.mkDerivation {
     ''
       closureInfo=${closureInfo { rootPaths = storeContents; }}
 
-      # touch rootfs/etc/machine-id
-      # cat <<EOF > rootfs/etc/os-release
-      # NAME=Server Optimised NixOS
-      # EOF
-
-      #echo hello > rootfs/etc/hostname
-      mkdir -p rootfs/{tmp,run,sys,proc,dev,,boot}
+      mkdir -p rootfs/{tmp,run,sys,proc,dev,etc,boot}
+      touch rootfs/etc/machine-id
+      cp ${os-release} rootfs/etc/os-release
 
       mkdir -p rootfs/nix/store
 

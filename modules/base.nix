@@ -11,6 +11,7 @@ in
   imports = [
     ./kernel.nix
     ./stage-1.nix
+    ./stage-2.nix
     ./image.nix
     # ../../nixpkgs/nixos/modules/misc/assertions.nix
   ];
