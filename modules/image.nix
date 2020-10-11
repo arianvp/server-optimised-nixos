@@ -72,13 +72,4 @@ in
     ''
       ${pkgs.systemd}/bin/systemd-nspawn --volatile=overlay --image ${config.system.build.image} --root-hash $(cat ${config.system.build.image.verity}/hash) --read-only --boot --register=false
     '';
-  # Make sure that the generated image is recognised by systemd as bootable
-  config.system.build.test = hostPkgs.vmTools.runInLinuxVM (
-    pkgs.runCommand "test" {
-      test = config.system.build.testScript;
-    }
-      ''
-        $test
-      ''
-  );
 }
