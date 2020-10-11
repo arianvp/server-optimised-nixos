@@ -27,6 +27,18 @@ in
 
   };
   config = {
+
+
+    kernel.params = [
+      "console=ttyS0"
+      "panic=-1"
+      "systemd.log_level=debug"
+      "rd.systemd.log_level=debug"
+      "udev.log-priority=debug"
+      "rd.udev.log-priority=debug"
+      "systemd.volatile=overlay"
+    ];
+
     system.build.runvm =
       let
         options = [

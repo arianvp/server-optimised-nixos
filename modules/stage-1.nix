@@ -73,7 +73,7 @@ in
 
     availableKernelModules = lib.options.mkOption {
       type = lib.types.listOf lib.types.str;
-      default = [ "dm_verity" "dm_mod" "e1000" "autofs4 " "squashfs" "virtio_net" "virtio_rng" "virtio_pci" "virtio_blk" "virtio_scsi" "virtio_balloon" "virtio_console" "af_packet" ];
+      default = [ "dm_verity" "dm_mod" "e1000" "autofs4 " "squashfs" "virtio_net" "virtio_rng" "virtio_pci" "virtio_blk" "virtio_scsi" "virtio_balloon" "virtio_console" "af_packet" "overlay" ];
     };
 
     kernelModules = lib.options.mkOption {
@@ -124,15 +124,6 @@ in
 
       };
     };
-
-    kernel.params = [
-      "console=ttyS0"
-      "panic=-1"
-      "systemd.log_level=debug"
-      "rd.systemd.log_level=debug"
-      "udev.log-priority=debug"
-      "rd.udev.log-priority=debug"
-    ];
     system.build.init = init;
     system.build.initrd = pkgs.makeInitrd  { storeContents = initrdfs; };
     # system.build.initrdfs = initrdfs;
