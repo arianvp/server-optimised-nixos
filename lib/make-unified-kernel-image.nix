@@ -1,8 +1,8 @@
 { stdenv, systemd, utillinux }:
 
-{ version, os-release, cmdline, kernel, initrd }:
+{ version, tries, os-release, cmdline, kernel, initrd }:
 stdenv.mkDerivation {
-  name = "${version}-linux.efi";
+  name = "${version}-linux+${toString tries}.efi";
   buildCommand = ''
     objcopy \
         --add-section .osrel="${os-release}"        --change-section-vma .osrel=0x20000    \

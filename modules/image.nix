@@ -1,5 +1,8 @@
 { pkgs, hostPkgs, config, ... }:
 let
+  # Amount of times to try this configuration. See
+  # https://systemd.io/AUTOMATIC_BOOT_ASSESSMENT/
+  tries = 3;
   version = "0.0.1";
   os-release = pkgs.writeText "os-release" ''
     NAME=Server Optimised NixOS
@@ -38,7 +41,7 @@ in
   {
   config.system.build.squashfs = squashfs;
   config.system.build.stub = pkgs.makeUnifiedKernelImage {
-    inherit version os-release;
+    inherit tries version os-release;
     cmdline = pkgs.runCommand "cmdline" {} ''
       echo -n "roothash=$(cat ${config.system.build.image.verity}/hash) ${toString config.kernel.params}" > $out
     '';
