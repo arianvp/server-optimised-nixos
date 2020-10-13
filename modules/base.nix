@@ -1,8 +1,9 @@
 { config, lib, hostPkgs, pkgs, ... }:
 let
+  ovmf = pkgs.OVMF-secureBoot.fd;
   efiPrefix =
-    if (pkgs.stdenv.isi686 || pkgs.stdenv.isx86_64) then "${pkgs.OVMF.fd}/FV/OVMF"
-    else if pkgs.stdenv.isAarch64 then "${pkgs.OVMF.fd}/FV/AAVMF"
+    if (pkgs.stdenv.isi686 || pkgs.stdenv.isx86_64) then "${ovmf}/FV/OVMF"
+    else if pkgs.stdenv.isAarch64 then "${ovmf}/FV/AAVMF"
     else throw "No EFI firmware available for platform";
   efiFirmware = "${efiPrefix}_CODE.fd";
   efiVarsDefault = "${efiPrefix}_VARS.fd";
