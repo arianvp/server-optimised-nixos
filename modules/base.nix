@@ -13,7 +13,6 @@ in
     ./stage-1.nix
     ./stage-2.nix
     ./image.nix
-    # ../../nixpkgs/nixos/modules/misc/assertions.nix
   ];
   options = {
     system.build = lib.options.mkOption {
@@ -43,12 +42,7 @@ in
       let
         options = [
           "-drive index=0,id=drive1,file=${config.system.build.image},readonly,media=cdrom,format=raw,if=virtio"
-          # "-kernel ${config.system.build.kernel}/bzImage"
-          # "-initrd ${config.system.build.initrd}"
-          # "-append ${toString config.kernel.params}"
           "-nographic"
-          # "-net none"
-          # "-no-reboot"
           "-device virtio-rng-pci"
           "-netdev user,id=user.0"
           "-device e1000,netdev=user.0"
