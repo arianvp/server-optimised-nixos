@@ -26,7 +26,7 @@ $(nix-build -A config.system.build.runvm)
 ```
 $(nix-build -A config.system.build.nspawn)
 ```
-* Debug the image by mounting it:
+* Debug the image by mounting it using `systemd-dissect`:
 ```
 $(nix-build -A config.system.build.dissect)
 ```
