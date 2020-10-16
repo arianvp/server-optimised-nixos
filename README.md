@@ -12,10 +12,25 @@ It is an opinionated, server-first distribution.
 Note that most of the listed features are currently vaporware
 
 ## Running
-You can spawn a QEMU for now:
+
+* You can build an EFI image with verity partition
 ```
-$(nix-build -A config.systemd.build.runvm)
+nix-build -A config.system.build.image
 ```
+
+* You can spawn an EFI/SecureBoot enabled QEMU
+```
+$(nix-build -A config.system.build.runvm)
+```
+* Spawn an `nspawn` container that checks the integrity of the system
+```
+$(nix-build -A config.system.build.nspawn)
+```
+* Debug the image by mounting it:
+```
+$(nix-build -A config.system.build.dissect)
+```
+
 
 ## Features
 * Automatic updates
