@@ -19,8 +19,9 @@ $(nix-build -A config.systemd.build.runvm)
 
 ## Features
 * Automatic updates
-* Bring your own pkgs.  Meaning no more `blah.package` setting in modules. Modules are purely config, not an override for packages.
-  * Does away with the `nixpkgs` module. and the `system` parameter
+* Measured boot (TPM)
+* SecureBoot
+* Using   dm-verity for integrity of the system
 * Unattended reboots
 * Atomic upgrades and rollbacks through reboots or kexec\
   * Automatic boot assessment through systemd-boot with automatic rollback when system is unhealthy
