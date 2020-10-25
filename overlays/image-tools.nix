@@ -5,11 +5,4 @@ self: super: {
   makeEFI = self.callPackage ../lib/make-efi.nix {};
   makeVFAT = self.callPackage ../lib/make-vfat.nix {};
   makeUnifiedKernelImage = self.callPackage ../lib/make-unified-kernel-image.nix {};
-
-  example = self.callPackage ../example.nix {};
-
-  lol = self.makeVFAT {
-    size = 1024*1024*1024;
-    files = { "EFI\\Linux" = ../README.md; };
-  };
 }
