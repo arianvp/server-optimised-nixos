@@ -1,10 +1,10 @@
-self: super: {
+final: prev: {
   # These tests are slow; disable them for now for interactive dev
   # bash-completion = super.bash-completion.overrideAttrs (old: old // { doCheck = false; } );
 
   # use old systemd
 
-  systemd = self.callPackage (
+  systemd = final.callPackage (
     { stdenv
     , acl
     , coreutils
