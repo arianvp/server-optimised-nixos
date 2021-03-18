@@ -24,7 +24,6 @@
         "system/boot/initrd-ssh.nix"
         "system/boot/initrd-network.nix"
         "system/boot/grow-partition.nix"
-        "system/boot/grow-partition.nix"
         # TODO: Required udev rules
         "tasks/swraid.nix"
         "tasks/bcache.nix"
