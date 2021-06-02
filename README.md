@@ -35,8 +35,9 @@ $(nix-build -A config.system.build.dissect)
 ## Features
 * Automatic updates
 * Measured boot (TPM)
-* SecureBoot
-* Using   dm-verity for integrity of the system
+* [x] systemd-boot with Unified Kernel images
+* [ ] SecureBoot
+* [x] Using   dm-verity for integrity of the system
 * Unattended reboots
 * Atomic upgrades and rollbacks through reboots or kexec\
   * Automatic boot assessment through systemd-boot with automatic rollback when system is unhealthy
@@ -44,12 +45,12 @@ $(nix-build -A config.system.build.dissect)
 * fwupd integration
 * Have to include modules on demand.
 * Heavily documented modules
-* Systemd is used for both stage-1 and stage-2 init
-* Systemd-networkd based networking
+* [x] Systemd is used for both stage-1 and stage-2 init
+* [x] Systemd-networkd based networking
 * Systemd-nspawn based containers (and also docker containers)
 * Heavy use of systemd-generators
 * Uses systemd-tmpfiles to populate `/etc`
-* Systemd resizes and formats disks on first boot
+* [ ] Systemd resizes and formats disks on first boot using `systemd-repart`
 * Only use ``Requires and Wants. Not WantedBy and RequiresBy
    i.e.
 
