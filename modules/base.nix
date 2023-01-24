@@ -10,35 +10,11 @@ let
 in
 {
   imports = [
-    ./kernel.nix
-    ./stage-1.nix
-    ./stage-2.nix
     ./image.nix
   ];
-  options = {
-    system.build = lib.options.mkOption {
-      internal = true;
-      default = {};
-      type = lib.types.attrsOf lib.types.package;
-      description = ''
-        Derivations used to set up the system;
-      '';
-    };
 
-  };
   config = {
-
-
-    kernel.params = [
-      "console=ttyS0"
-      "panic=-1"
-      "systemd.log_level=debug"
-      "rd.systemd.log_level=debug"
-      "udev.log-priority=debug"
-      "rd.udev.log-priority=debug"
-      "systemd.volatile=overlay"
-    ];
-
+    boot.kernelParams = [ "console=ttyS0" ];
     system.build.runvm =
       let
         options = [
