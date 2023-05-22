@@ -1,4 +1,4 @@
-{ stdenv , cpio , closureInfo }:
+{ stdenv, cpio, closureInfo }:
 # makeInitrd : drv -> drv
 { storeContents }:
 stdenv.mkDerivation {
