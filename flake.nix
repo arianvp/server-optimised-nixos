@@ -5,7 +5,7 @@
     formatter.aarch64-linux = nixpkgs.legacyPackages.aarch64-linux.nixpkgs-fmt;
 
     nixosModules = {
-      base = ./base.nix;
+      base = ./modules/base.nix;
       image = ./modules/image.nix;
       system = { config, ... }: {
         system.stateVersion = "23.05";
@@ -20,9 +20,9 @@
     nixosConfigurations.default = nixpkgs.lib.nixosSystem {
       system = "aarch64-linux";
       modules = [
+        { nixpkgs.overlays = [ (import ./overlays/systemd.nix) ]; }
         self.nixosModules.base
         self.nixosModules.system
-        self.nixosModules.repart
         self.nixosModules.image
       ];
     };
