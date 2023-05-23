@@ -2,6 +2,8 @@
 
 { version, tries, os-release, cmdline, kernel, initrd }:
 stdenv.mkDerivation {
+  # ENTRY-TOKEN-KERNEL-VERSION[+TRIES].efi
+  # In our case nix store hash is the ENTRY-TOKEN
   name = "${version}-linux+${toString tries}.efi";
   buildCommand = ''
     objcopy \
