@@ -1,10 +1,10 @@
 { config, pkgs, lib, ... }:
 let
   uki = pkgs.makeUnifiedKernelImage {
-    inherit (config.system.build.kernel) version;
     tries = 3;
     os-release = config.environment.etc."os-release".source;
     kernel = "${config.system.build.kernel}/Image";
+    version = config.system.build.kernel.version;
     initrd = "${config.system.build.initialRamdisk}/initrd";
     cmdline = pkgs.writeTextFile {
       name = "cmdline";
@@ -67,6 +67,7 @@ in
         inherit definitionsDirectory;
         seed = "d03836b2-8e14-46e6-9524-d3e9d0b363dd";
       }
+      # TODO: use user namespace instead of fakeroot?
       ''
         fakeroot systemd-repart --seed $seed --size auto --definitions $definitionsDirectory --empty=create $out
       '';
