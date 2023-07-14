@@ -1,62 +1,52 @@
-{ config, lib, hostPkgs, pkgs, ... }:
-let
-  ovmf = pkgs.OVMF-secureBoot.fd;
-  efiPrefix =
-    if (pkgs.stdenv.isi686 || pkgs.stdenv.isx86_64) then "${ovmf}/FV/OVMF"
-    else if pkgs.stdenv.isAarch64 then "${ovmf}/FV/AAVMF"
-    else throw "No EFI firmware available for platform";
-  efiFirmware = "${efiPrefix}_CODE.fd";
-  efiVarsDefault = "${efiPrefix}_VARS.fd";
-in
+{ pkgs, config, lib, ... }:
 {
-  imports = [
-    ./kernel.nix
-    ./stage-1.nix
-    ./stage-2.nix
-    ./image.nix
+  # boot.loader.systemd-boot.enable = true;
+  boot.initrd.supportedFilesystems = [
+    "ext4"
+    "overlay"
+    "squashfs"
   ];
-  options = {
-    system.build = lib.options.mkOption {
-      internal = true;
-      default = {};
-      type = lib.types.attrsOf lib.types.package;
-      description = ''
-        Derivations used to set up the system;
-      '';
-    };
+  boot.initrd.availableKernelModules = [
+    "af_packet" # systemd-networkd
+    "dm_mod"
+    "dm_verity"
+    "e1000"
+    "virtio_balloon"
+    "virtio_blk"
+    "virtio_console"
+    "virtio_mmio"
+    "virtio_net"
+    "virtio_pci"
+    "virtio_rng"
+    "virtio_scsi"
+  ];
+  boot.kernelParams = [ "console=hvc0" ];
+  # TODO: systemd kmod_setup will already load these modules
+  boot.initrd.kernelModules = [ "virtio_balloon" "virtio_console" "virtio_rng" ];
+  boot.loader.grub.enable = lib.mkDefault false;
 
-  };
-  config = {
+  boot.bootspec.enable = true;
 
+  boot.initrd.systemd.enable = true;
+  boot.initrd.systemd.emergencyAccess = true;
+  boot.initrd.systemd.repart.enable = true;
+  # we shouldn't disable this for non-containers. Systemd ships the unit anyway and already
+  # has a ConditionVirtualization=container clause
+  systemd.services.console-getty.enable = true;
 
-    kernel.params = [
-      "console=ttyS0"
-      "panic=-1"
-      "systemd.log_level=debug"
-      "rd.systemd.log_level=debug"
-      "udev.log-priority=debug"
-      "rd.udev.log-priority=debug"
-      "systemd.volatile=overlay"
-    ];
+  networking.useNetworkd = true;
 
-    system.build.runvm =
-      let
-        options = [
-          "-drive index=0,id=drive1,file=${config.system.build.image},readonly,media=cdrom,format=raw,if=virtio"
-          "-nographic"
-          "-device virtio-rng-pci"
-          "-netdev user,id=user.0"
-          "-device e1000,netdev=user.0"
-          "-drive if=pflash,format=raw,unit=0,readonly,file=${efiFirmware}"
-          "-drive if=pflash,format=raw,unit=1,file=$efiVars"
-        ];
-      in
-        pkgs.writeScript "runner" ''
-          #!${hostPkgs.stdenv.shell}
-          efiVars=./efi-vars.fd
-          cp ${efiVarsDefault} $efiVars
-          chmod +w $efiVars
-          exec ${hostPkgs.qemu_kvm}/bin/qemu-kvm -name nixos -m 512 ${toString options}
-        '';
-  };
+  boot.postBootCommands =
+    ''
+      # After booting, register the contents of the Nix store
+      # in the Nix database in the tmpfs.
+      echo "Registering Nix store paths.."
+      ${config.nix.package}/bin/nix-store --load-db < /nix/store/nix-path-registration
+
+      # nixos-rebuild also requires a "system" profile and an
+      # /etc/NIXOS tag.
+      touch /etc/NIXOS
+      echo "Setting up system profile.."
+      ${config.nix.package}/bin/nix-env -p /nix/var/nix/profiles/system --set /run/current-system
+    '';
 }

@@ -11,28 +11,35 @@ It is an opinionated, server-first distribution.
 
 Note that most of the listed features are currently vaporware
 
+
 ## Running
 
-* You can build an EFI image with verity partition
-```
-nix-build -A config.system.build.image
-```
+* You can build an EFI image
 
-* You can spawn an EFI/SecureBoot enabled QEMU
-```
-$(nix-build -A config.system.build.runvm)
-```
+  ```bash
+  nix build .#image
+  ```
+
 * Spawn an `nspawn` container that checks the integrity of the system
-```
-$(nix-build -A config.system.build.nspawn)
-```
-* Debug the image by mounting it using `systemd-dissect`:
-```
-$(nix-build -A config.system.build.dissect)
-```
+
+  ```bash
+  sudo nix run '.#nspawn'
+  ```
+
+* Run with MacOS 'Virtualization.Framework':
+
+  We can't provide a nix package until Apple SDK 12 is shipped. tracked here https://github.com/NixOS/nixpkgs/issues/242666
+  ```bash
+  nix build .#image --eval-store auto --builder ssh://linux-builder
+  cp ./result image.img
+  chmod +w image.img
+  (cd runvf && make)
+  ./runvf/.build/release/runvf image.img
+  ```
 
 
 ## Features
+
 * Automatic updates
 * Measured boot (TPM)
 * [x] systemd-boot with Unified Kernel images
@@ -68,6 +75,8 @@ $(nix-build -A config.system.build.dissect)
   * https://github.com/coreos/ignition
 
 ## Boot process
+
+![Screenshot](plot.svg)
 
 systemConfig can either be a path to an evaluated thingy or a path to a nix expression
 

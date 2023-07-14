@@ -1,78 +1,104 @@
-{ pkgs, hostPkgs, config, ... }:
+{ config, pkgs, lib, ... }:
 let
-  # Amount of times to try this configuration. See
-  # https://systemd.io/AUTOMATIC_BOOT_ASSESSMENT/
-  tries = 3;
-  version = "0.0.1";
-  os-release = pkgs.writeText "os-release" ''
-    NAME=Server Optimised NixOS
-    PRETTY_NAME=Server Optimised NixOS (0.0.1)
-    ID=nixos
-    VERSION_ID=0.0.1
+
+  loaderConf = pkgs.writeTextFile {
+    name = "loader.conf";
+    text = ''
+      timeout 0
+    '';
+  };
+
+  esp = pkgs.writeTextFile {
+    name = "00-esp.conf";
+    text = ''
+      [Partition]
+      Type=esp
+      Format=vfat
+      SizeMinBytes=1G
+      SizeMaxBytes=1G
+      CopyFiles=${config.systemd.package}/lib/systemd/boot/efi/systemd-bootaa64.efi:/EFI/BOOT/BOOTAA64.EFI
+      CopyFiles=${config.systemd.package}/lib/systemd/boot/efi/systemd-bootaa64.efi:/EFI/systemd/systemd-bootaa64.efi
+      CopyFiles=${config.system.build.uki}:/EFI/Linux/${baseNameOf config.system.build.uki}
+      CopyFiles=${loaderConf}:/loader/loader.conf
+    '';
+  };
+
+  closure = pkgs.closureInfo { rootPaths = [ config.system.build.toplevel ]; };
+
+  rootPartition = pkgs.runCommand "00-root.conf" { } ''
+    cat <<EOF > $out
+    [Partition]
+    Type=root
+    Format=ext4
+    Minimize=guess
+
+    MakeDirectories=/efi /etc /home /nix/store /opt /root /run /srv /tmp /var /sys /proc /usr /bin /dev
+    CopyFiles=${closure}/registration:/nix/store/nix-path-registration
+    EOF
+    for path in $(cat ${closure}/store-paths); do
+      echo "CopyFiles=$path" >> $out
+    done
   '';
-  emptydir = pkgs.runCommand "emptydir" {} "mkdir -p $out";
-  emptyfile = pkgs.runCommand "emptyfile" {} "touch $out";
+  # TODO: nix-store --load-db < /registration
 
-  rootfs = pkgs.linkFarm "rootfs" [
-    # { name = "etc/os-release"; path = "${os-release}"; }
+  partitions = [ esp rootPartition ];
 
-    # An empty machine-id will cause systemd to temporarily bind-mount a read-only machine-id
-    # The real question is though; will this work with symlinks? lets find out
-    # { name = "etc/machine-id"; path = "${emptyfile}"; }
-
-    # TODO: These needed to be there? systemd-nspawn insists on mounting them; which it has no business in doing. patch
-    # { name = "etc/localtime"; path = "${emptyfile}"; }
-    # { name = "etc/resolv.conf"; path = "${emptyfile}"; }
-
-    # TODO: mimick, or abstract away stage-1 into stage-2? this is very similar!
-    # { name = "sbin/init"; path = "${pkgs.systemd}/lib/systemd/systemd"; }
-
-    { name = "sbin/init"; path = "${config.stage-2.system.build.toplevel}/init"; }
-
-    # TODO I don't remember why this was needed. but we need it? lets fix it?
-    # { name = "sbin/modprobe"; path = "${pkgs.kmod}/bin/modprobe"; }
-  ];
-
-  squashfs = pkgs.makeSquashfs {
-    inherit os-release;
-    storeContents = rootfs;
-  };
+  definitions = pkgs.runCommand "repart.d" { } ''
+    mkdir -p $out
+    ${(lib.concatStringsSep "\n" (map (f: "cp ${f} $out/${f.name}") partitions))}
+  '';
 in
-  {
-  config.system.build.squashfs = squashfs;
-  config.system.build.stub = pkgs.makeUnifiedKernelImage {
-    inherit tries version os-release;
-    cmdline = pkgs.runCommand "cmdline" {} ''
-      echo -n "roothash=$(cat ${config.system.build.image.verity}/hash) ${toString config.kernel.params}" > $out
+{
+  /*config.boot.kernelPatches = [{
+    name = "efi-zboot";
+    patch = null;
+    extraConfig = ''
+      EFI_ZBOOT y
     '';
-    initrd = config.system.build.initrd;
-    kernel = config.system.build.kernel;
-  };
-  config.system.build.image = pkgs.makeEFI {
-    esp = pkgs.makeVFAT {
-      size = 1024 * 1024 * 1024;
-      files = {
-        # TODO This is a bit naughty; and should move into make-esp.nix once make-vat.nix is renamed to it. Then we do not need this hashmap unsafe hack
-        "EFI/Linux/${builtins.baseNameOf (builtins.unsafeDiscardStringContext config.system.build.stub)}" = config.system.build.stub;
-        "EFI/BOOT/BOOTX64.EFI" = "${pkgs.systemd}/lib/systemd/boot/efi/systemd-bootx64.efi";
-        "EFI/systemd/systemd-bootx64.efi" = "${pkgs.systemd}/lib/systemd/boot/efi/systemd-bootx64.efi";
-        "loader/loader.conf" = pkgs.writeText "loader.conf" ''
-          timeout 10
-          # editor no
-
-        '';
-      };
+  }];*/
+  # TODO: Fix this once we got a working kernel
+  # TODO: Why does this not work if falsE? Why do we not get a login shell?
+  config.boot.isContainer = false;
+  config.services.nginx.enable = true;
+  config.services.getty.autologinUser = "root";
+  # config.boot.modprobeConfig.enable = false; #makes activation fail
+  # config.environment.etc."modprobe.d/nixos.conf".text = ""; # HACK
+  config.system.build = {
+    inherit closure definitions;
+    systemd-tools = pkgs.systemd-tools;
+    uki = pkgs.stdenv.mkDerivation {
+      name = "${config.system.build.kernel.version}-linux.efi";
+      buildCommand = ''
+        ${pkgs.systemd-tools}/lib/systemd/ukify \
+          ${config.system.build.kernel}/Image \
+          ${config.system.build.initialRamdisk}/initrd \
+          --cmdline "${lib.concatStringsSep " " config.boot.kernelParams} init=${config.system.build.toplevel}/init" \
+          --os-release @${config.environment.etc."os-release".source} \
+          --uname ${config.system.build.kernel.version} \
+          --stub "${pkgs.systemd}/lib/systemd/boot/efi/linux${pkgs.stdenv.targetPlatform.efiArch}.efi.stub"\
+          --no-sign-kernel
+        cp Image.unsigned.efi $out
+      '';
     };
-    root = squashfs;
+    nspawn = pkgs.writeScriptBin "nspawn" ''
+      systemd-nspawn --volatile=overlay --image ${config.system.build.image} ${config.system.build.toplevel}/init
+    '';
+    image = pkgs.runCommand "image"
+      {
+        nativeBuildInputs = [
+          pkgs.systemd-tools
+          pkgs.dosfstools # vfat
+          pkgs.mtools # vfat
+          pkgs.e2fsprogs # ext4
+          pkgs.fakeroot
+          pkgs.squashfsTools
+        ];
+        inherit definitions;
+        seed = "d03836b2-8e14-46e6-9524-d3e3d0b363dd";
+      }
+      ''
+        fakeroot systemd-repart --seed $seed --size auto --definitions $definitions --empty=create $out
+      '';
+
   };
-  config.system.build.dissect = pkgs.writeScript "test"
-    ''
-      ${pkgs.kmod}/bin/modprobe loop
-      mkdir mounted
-      ${pkgs.systemd}/lib/systemd/systemd-dissect ${config.system.build.image} --root-hash $(cat ${config.system.build.image.verity}/hash) --mount mounted --read-only
-    '';
-  config.system.build.nspawn = pkgs.writeScript "test"
-    ''
-      ${pkgs.systemd}/bin/systemd-nspawn --volatile=overlay --image ${config.system.build.image} --root-hash $(cat ${config.system.build.image.verity}/hash) --read-only --boot --register=false
-    '';
 }
