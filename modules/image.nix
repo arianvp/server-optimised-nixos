@@ -39,7 +39,6 @@ let
       echo "CopyFiles=$path" >> $out
     done
   '';
-  # TODO: nix-store --load-db < /registration
 
   partitions = [ esp rootPartition ];
 
@@ -49,32 +48,26 @@ let
   '';
 in
 {
-  /*config.boot.kernelPatches = [{
-    name = "efi-zboot";
-    patch = null;
-    extraConfig = ''
-      EFI_ZBOOT y
-    '';
-  }];*/
-  # TODO: Fix this once we got a working kernel
-  # TODO: Why does this not work if falsE? Why do we not get a login shell?
-  config.boot.isContainer = false;
-  config.services.nginx.enable = true;
-  config.services.getty.autologinUser = "root";
-  # config.boot.modprobeConfig.enable = false; #makes activation fail
-  # config.environment.etc."modprobe.d/nixos.conf".text = ""; # HACK
   config.system.build = {
     inherit closure definitions;
     systemd-tools = pkgs.systemd-tools;
     uki = pkgs.stdenv.mkDerivation {
       name = "${config.system.build.kernel.version}-linux.efi";
+      nativeBuildInputs = [ pkgs.jq ];
+      # TODO: This shouldn't depend on config.environment.etc."os-release".source
       buildCommand = ''
+        boot_json=${config.system.build.toplevel}/boot.json
+        kernel=$(jq -r '."org.nixos.bootspec.v1".kernel' "$boot_json")
+        kernelParams=$(jq -j '."org.nixos.bootspec.v1".kernelParams | join(" ")' "$boot_json")
+        initrd=$(jq -r '."org.nixos.bootspec.v1".initrd' "$boot_json")
+        init=$(jq -r '."org.nixos.bootspec.v1".init' "$boot_json")
+
+
         ${pkgs.systemd-tools}/lib/systemd/ukify \
-          ${config.system.build.kernel}/Image \
-          ${config.system.build.initialRamdisk}/initrd \
-          --cmdline "${lib.concatStringsSep " " config.boot.kernelParams} init=${config.system.build.toplevel}/init" \
+          $kernel \
+          $initrd \
+          --cmdline "$kernelParams init=$init" \
           --os-release @${config.environment.etc."os-release".source} \
-          --uname ${config.system.build.kernel.version} \
           --stub "${pkgs.systemd}/lib/systemd/boot/efi/linux${pkgs.stdenv.targetPlatform.efiArch}.efi.stub"\
           --no-sign-kernel
         cp Image.unsigned.efi $out
