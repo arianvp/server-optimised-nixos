@@ -1,13 +1,7 @@
 {
   description = "A very basic flake";
 
-  # inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.05";
-
-  nixConfig = {
-    trusted-substituters = [ "https://cache.garnix.io" ];
-    substituters = [ "https://cache.garnix.io" ];
-    trusted-public-keys = [ "cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g=" ];
-  };
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs";
 
   outputs = { self, nixpkgs }: {
 
@@ -18,13 +12,13 @@
     nixosModules = {
       base = ./modules/base.nix;
       image = ./modules/image.nix;
-      system = { config, ... }: {
+      system = { pkgs, config, ... }: {
         system.stateVersion = "23.05";
         fileSystems = {
           # TODO gpt-auto-generator already takes care of these two. not needed.
-          "/".device = "/dev/disk/by-partlabel/root-arm64";
+          "/".device = "/dev/disk/by-partlabel/root-${pkgs.stdenv.hostPlatform.linuxArch}";
           "/".fsType = "ext4";
-          "/boot".device = "/dev/disk/by-partlabel/esp";
+          "/efi".device = "/dev/disk/by-partlabel/esp";
         };
       };
     };
@@ -42,14 +36,9 @@
     packages.aarch64-linux = rec {
       inherit
         (self.nixosConfigurations.default.config.system.build)
-        kernel
-        uki
-        closure
         toplevel
-        systemd-tools
         image
-        nspawn
-        bootStage2;
+        nspawn;
       default = toplevel;
     };
 

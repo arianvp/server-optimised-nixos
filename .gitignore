@@ -4,3 +4,5 @@ efi-vars.fd
 mounted
 .build
 outputs
+image.raw
+
