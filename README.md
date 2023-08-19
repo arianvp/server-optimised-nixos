@@ -57,7 +57,7 @@ Note that most of the listed features are currently vaporware
 * Systemd-nspawn based containers (and also docker containers)
 * Heavy use of systemd-generators
 * Uses systemd-tmpfiles to populate `/etc`
-* [ ] Systemd resizes and formats disks on first boot using `systemd-repart`
+* [x] Systemd resizes and formats disks on first boot using `systemd-repart`
 * Only use ``Requires and Wants. Not WantedBy and RequiresBy
    i.e.
 
