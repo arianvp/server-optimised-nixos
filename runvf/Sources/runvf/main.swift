@@ -12,6 +12,13 @@ guard CommandLine.argc == 2 else {
     printUsageAndExit()
 }
 
+let inputFileHandle = FileHandle.standardInput
+let outputFileHandle = FileHandle.standardOutput
+
+// Put stdin into raw mode, disabling local echo, input canonicalization,
+// and CR-NL mapping.
+var attributes = termios()
+tcgetattr(inputFileHandle.fileDescriptor, &attributes)
 
 let imageURL = URL(fileURLWithPath: CommandLine.arguments[1], isDirectory: false)
 
@@ -70,6 +77,7 @@ class Delegate: NSObject {
 
 extension Delegate: VZVirtualMachineDelegate {
     func guestDidStop(_ virtualMachine: VZVirtualMachine) {
+        tcsetattr(inputFileHandle.fileDescriptor, TCSANOW, &attributes)
         print("The guest shut down. Exiting.")
         exit(EXIT_SUCCESS)
     }
@@ -92,17 +100,10 @@ func createOrGetVariableStore() -> VZEFIVariableStore {
 /// and attaches it to stdin and stdout.
 func createConsoleConfiguration() -> VZSerialPortConfiguration {
     let consoleConfiguration = VZVirtioConsoleDeviceSerialPortConfiguration()
-
-    let inputFileHandle = FileHandle.standardInput
-    let outputFileHandle = FileHandle.standardOutput
-
-    // Put stdin into raw mode, disabling local echo, input canonicalization,
-    // and CR-NL mapping.
-    var attributes = termios()
-    tcgetattr(inputFileHandle.fileDescriptor, &attributes)
-    attributes.c_iflag &= ~tcflag_t(ICRNL)
-    attributes.c_lflag &= ~tcflag_t(ICANON | ECHO)
-    tcsetattr(inputFileHandle.fileDescriptor, TCSANOW, &attributes)
+    var attributes2 = attributes
+    attributes2.c_iflag &= ~tcflag_t(ICRNL)
+    attributes2.c_lflag &= ~tcflag_t(ICANON | ECHO | ISIG)
+    tcsetattr(inputFileHandle.fileDescriptor, TCSANOW, &attributes2)
 
     let stdioAttachment = VZFileHandleSerialPortAttachment(fileHandleForReading: inputFileHandle,
                                                            fileHandleForWriting: outputFileHandle)
