@@ -1,4 +1,7 @@
 final: prev: {
+  systemd-sysusers = prev.systemd.overrideAttrs (finalAttrs: previousAttrs: {
+    mesonFlags = previousAttrs.mesonFlags ++ [ "-Dsysusers=true" ];
+  });
   systemd-tools = ((prev.systemd.override { withUkify = true; }).overrideAttrs (finalAttrs: previousAttrs: {
     src = prev.fetchFromGitHub {
       owner = "systemd";

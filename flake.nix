@@ -1,7 +1,7 @@
 {
   description = "A very basic flake";
 
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs";
+  inputs.nixpkgs.url = "github:arianvp/nixpkgs/gpt-auto";
 
   outputs = { self, nixpkgs }: {
 
@@ -12,15 +12,6 @@
     nixosModules = {
       base = ./modules/base.nix;
       image = ./modules/image.nix;
-      system = { pkgs, config, ... }: {
-        system.stateVersion = "23.05";
-        fileSystems = {
-          # TODO gpt-auto-generator already takes care of these two. not needed.
-          "/".device = "/dev/disk/by-partlabel/root-${pkgs.stdenv.hostPlatform.linuxArch}";
-          "/".fsType = "ext4";
-          "/efi".device = "/dev/disk/by-partlabel/esp";
-        };
-      };
     };
 
     nixosConfigurations.default = nixpkgs.lib.nixosSystem {
@@ -28,7 +19,6 @@
       modules = [
         { nixpkgs.overlays = [ self.overlays.systemd ]; }
         self.nixosModules.base
-        self.nixosModules.system
         self.nixosModules.image
       ];
     };

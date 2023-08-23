@@ -1,7 +1,11 @@
 { pkgs, config, lib, ... }:
 {
-  boot.loader.systemd-boot.enable = true;
+  # boot.loader.systemd-boot.enable = true;
   boot.bootspec.enable = true;
+  boot.loader.external.enable = true;
+  boot.loader.external.installHook = pkgs.writeScript "install" ''
+  echo would install
+  '';
   boot.initrd.systemd.enable = true;
   boot.initrd.systemd.emergencyAccess = true;
   boot.initrd.systemd.repart.enable = true;
@@ -11,20 +15,33 @@
   services.getty.autologinUser = "root";
 
   networking.useNetworkd = true;
+  systemd.services.systemd-networkd-wait-online.enable = lib.mkForce false;
 
-  systemd.repart.enable = true;
-  systemd.repart.partitions.root = {
-    Type = "root-${pkgs.stdenv.hostPlatform.linuxArch}"; 
-    Format = "ext4";
-  };
+  boot.initrd.availableKernelModules = [
+    "overlay"
+  ];
+  boot.initrd.supportedFilesystems = [
+    "erofs"
+  ];
 
-  # system.stateVersion = "23.05";
+  documentation.nixos.enable = false;
+  system.disableInstallerTools = true;
+  nix.channel.enable = false;
+  nix.enable = false;
+  # Lets see what happens
+  # system.activationScripts.users = lib.mkForce "";
+  # system.activationScripts.hashes = lib.mkForce "";
+  systemd.additionalUpstreamSystemUnits = [
+  ];
+  systemd.package = pkgs.systemd-sysusers;
+
+
+
   fileSystems = {
-    # TODO gpt-auto-generator already takes care of these two. not needed. But nixos insists. I think a udev rule is missing
-    "/" = {
-      device = "/dev/disk/by-partlabel/root-${pkgs.stdenv.hostPlatform.linuxArch}";
-      fsType = "ext4";
-      options = [ "x-systemd.growfs" ];
-    };
+    # "/" =          { device = "none"; fsType = "tmpfs"; options = ["mode=0755" ]; };
+    # This _should_ be picked up by gpt-auto-generator?
+    # "/usr"       = { device = "/dev/disk/by-partlabel/usr"; fsType = "erofs"; };
+    "/nix/store" = { device = "/usr/store"; fsType = "none"; options = ["bind"]; depends = ["/usr"]; };
   };
+  system.stateVersion = "23.05";
 }
