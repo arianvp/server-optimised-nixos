@@ -91,6 +91,7 @@ in
     Minimize=yes
     Verity=data
     VerityMatchKey=usr
+    CopyFiles=${closure}/registration:/store/.nix-path-registration
     EOB
     for path in $(cat ${closure}/store-paths); do
       echo "CopyFiles=$path:''${path#/nix}" >> repart.d/10-usr.conf
