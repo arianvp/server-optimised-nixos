@@ -35,6 +35,8 @@ in
   boot.kernelParams = [
     "console=hvc0"
     "root=tmpfs"
+    "systemd.journald.forward_to_console"
+    "systemd.log_level=debug"
     # "mount.usr=PARTLABEL=usr"
   ];
   boot.initrd.kernelModules = [ "virtio_balloon" "virtio_console" "virtio_rng" "dm-verity" ];
@@ -54,7 +56,7 @@ in
     ];
   };
 
-
+  boot.initrd.supportedFilesystems = [ "erofs" ];
 
   system.build.image = pkgs.runCommand "image"
     {

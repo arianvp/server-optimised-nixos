@@ -18,12 +18,6 @@
   networking.useNetworkd = true;
   systemd.services.systemd-networkd-wait-online.enable = lib.mkForce false;
 
-  boot.initrd.availableKernelModules = [
-    "overlay"
-  ];
-  boot.initrd.supportedFilesystems = [
-    "erofs"
-  ];
 
   documentation.nixos.enable = false;
   system.disableInstallerTools = true;

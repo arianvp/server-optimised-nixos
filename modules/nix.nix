@@ -10,6 +10,8 @@
     '';
   };
 
+  boot.initrd.availableKernelModules = [ "overlay" ];
+
   boot.initrd.systemd = lib.mkIf config.nix.enable {
     mounts = [{
       where = "/sysroot/nix/store";
