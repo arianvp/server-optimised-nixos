@@ -24,10 +24,16 @@ let imageURL = URL(fileURLWithPath: CommandLine.arguments[1], isDirectory: false
 
 
 func createBlockDeviceConfiguration() -> VZVirtioBlockDeviceConfiguration{
-    guard let attachment = try? VZDiskImageStorageDeviceAttachment(url: imageURL, readOnly: false) else {
+    guard let attachment = try? VZDiskImageStorageDeviceAttachment(url: imageURL, readOnly: true) else {
         fatalError("Failed to create main disk attachment")
     }
     return VZVirtioBlockDeviceConfiguration(attachment: attachment)
+}
+
+func createNetworkDeviceConfiguration() -> VZNetworkDeviceConfiguration {
+    let config =  VZVirtioNetworkDeviceConfiguration()
+    config.attachment = VZNATNetworkDeviceAttachment()
+    return config
 }
 
 // MARK: Create the Virtual Machine Configuration
@@ -36,6 +42,8 @@ let configuration = VZVirtualMachineConfiguration()
 configuration.cpuCount = 6
 configuration.memorySize = VZVirtualMachineConfiguration.maximumAllowedMemorySize
 configuration.serialPorts = [ createConsoleConfiguration() ]
+
+configuration.entropyDevices = [ VZVirtioEntropyDeviceConfiguration() ]
 
 let platform = VZGenericPlatformConfiguration()
 platform.machineIdentifier = VZGenericMachineIdentifier()
@@ -46,6 +54,7 @@ let bootloader = VZEFIBootLoader()
 bootloader.variableStore = createOrGetVariableStore()
 configuration.bootLoader = bootloader
 configuration.storageDevices = [createBlockDeviceConfiguration()]
+configuration.networkDevices = [createNetworkDeviceConfiguration()]
 
 do {
     try configuration.validate()
