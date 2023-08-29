@@ -12,6 +12,7 @@
     nixosModules = {
       base = ./modules/base.nix;
       image = ./modules/image.nix;
+      etc = ./modules/etc.nix;
     };
 
     nixosConfigurations.default = nixpkgs.lib.nixosSystem {
@@ -20,6 +21,7 @@
         { nixpkgs.overlays = [ self.overlays.systemd ]; }
         self.nixosModules.base
         self.nixosModules.image
+        self.nixosModules.etc
       ];
     };
 
