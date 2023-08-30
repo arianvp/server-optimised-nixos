@@ -37,7 +37,7 @@ in
     "root=tmpfs"
     "quiet"
     # "systemd.journald.forward_to_console"
-    "systemd.log_level=debug"
+    # "systemd.log_level=debug"
     # "mount.usr=PARTLABEL=usr"
   ];
   boot.initrd.kernelModules = [ "virtio_balloon" "virtio_console" "virtio_rng" "dm-verity" ];
