@@ -37,7 +37,7 @@ in
     "root=tmpfs"
     "quiet"
     # "systemd.journald.forward_to_console"
-    # "systemd.log_level=debug"
+    "systemd.log_level=debug"
     # "mount.usr=PARTLABEL=usr"
   ];
   boot.initrd.kernelModules = [ "virtio_balloon" "virtio_console" "virtio_rng" "dm-verity" ];
@@ -61,6 +61,17 @@ in
   };
 
   boot.initrd.supportedFilesystems = [ "erofs" ];
+
+  # This improves boot time by ~1s
+  systemd.mounts = [{
+    enable = false;
+    where = "/sys/kernel/config";
+  }];
+
+  boot.initrd.systemd.mounts = [{
+    enable = false;
+    where = "/sys/kernel/config";
+  }];
 
   system.build.image = pkgs.runCommand "image"
     {
