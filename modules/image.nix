@@ -35,8 +35,9 @@ in
   boot.kernelParams = [
     "console=hvc0"
     "root=tmpfs"
-    "systemd.journald.forward_to_console"
-    "systemd.log_level=debug"
+    "quiet"
+    # "systemd.journald.forward_to_console"
+    # "systemd.log_level=debug"
     # "mount.usr=PARTLABEL=usr"
   ];
   boot.initrd.kernelModules = [ "virtio_balloon" "virtio_console" "virtio_rng" "dm-verity" ];
@@ -54,6 +55,9 @@ in
       "${config.boot.initrd.systemd.package}/lib/systemd/systemd-veritysetup"
       "${config.boot.initrd.systemd.package}/lib/systemd/system-generators/systemd-veritysetup-generator"
     ];
+    # systemd doesn't deserialize state when init= is passed.
+    # https://github.com/systemd/systemd/blob/85fe60b9e8cdf3f14a725fd65fe3003621d49baf/src/core/main.c#L1852-L1853
+    # contents."sbin/init" = "${config.system.build.toplevel}/init";
   };
 
   boot.initrd.supportedFilesystems = [ "erofs" ];
