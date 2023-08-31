@@ -40,13 +40,13 @@ class VirtualMachineDelegate: NSObject, VZVirtualMachineDelegate {
     print("Guest stopped with error: \(error)")
   }
 
-  @available(macOS, introduced: 12.0)
+  /*@available(macOS, introduced: 12.0)
   func virtualMachine(
     _ virtualMachine: VZVirtualMachine, networkDevice: VZNetworkDevice,
     attachmentWasDisconnectedWithError error: Error
   ) {
     print("Network device \(networkDevice) was disconnected with error: \(error)")
-  }
+  }*/
 }
 
 struct Bootspec: Codable {
