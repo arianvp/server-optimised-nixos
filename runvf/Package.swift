@@ -5,16 +5,15 @@ import PackageDescription
 
 let package = Package(
   name: "runvf",
-  platforms: [
-    .macOS(.v11)
-    .macOS(.v12)
-    .macOS(.v13)
-  ],
+  platforms: [.macOS(.v11)],
   products: [
     .executable(name: "runvf", targets: ["runvf"])
   ],
   dependencies: [
-    .package(url: "https://github.com/apple/swift-argument-parser", from: "1.2.0")
+    .package(
+      url: "https://github.com/apple/swift-argument-parser",
+      from: "1.2.0"
+    )
   ],
   targets: [
     .executableTarget(

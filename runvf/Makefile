@@ -2,7 +2,7 @@ PREFIX?=/usr/local
 
 .PHONY: install
 
-.build/release/runvf: Sources/runvf/main.swift Package.swift
+.build/release/runvf: Sources/runvf/Runvf.swift Package.swift
 	swift build -c release --disable-sandbox
 	codesign -s - --entitlements runvf.entitlements .build/release/runvf
 	chmod +x .build/release/runvf
