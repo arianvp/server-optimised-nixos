@@ -1,6 +1,5 @@
 { config, pkgs, lib, ... }:
 {
-  # Disables  the perl stuff
   boot.initrd.systemd = {
     mounts = [{
       where = "/sysroot/etc";

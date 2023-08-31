@@ -10,28 +10,34 @@
     '';
   };
 
-  boot.initrd.availableKernelModules = [ "overlay" ];
+  boot.initrd.availableKernelModules = [ "overlay" "virtio" ];
 
-  boot.initrd.systemd = lib.mkIf config.nix.enable {
-    mounts = [{
-      where = "/sysroot/nix/store";
-      what = "overlay";
-      type = "overlay";
-      options = "lowerdir=/sysroot/usr/store,upperdir=/sysroot/nix/.rw-store/store,workdir=/sysroot/nix/.rw-store/work";
-      wantedBy = [ "initrd-fs.target" ];
-      before = [ "initrd-fs.target" ];
-      requires = [ "rw-store.service" ];
-      after = [ "rw-store.service" "sysroot-usr.mount" ];
-      unitConfig.RequiresMountsFor = "/sysroot/usr/store";
-    }];
+  fileSystems."/nix/.ro-store" = {
+    device = "nix-store";
+    fsType = "virtiofs";
+    options = [ "x-initrd.mount" "ro" ];
+    neededForBoot = true;
+  };
+
+  fileSystems."/nix/store" = {
+    device = "overlay";
+    fsType = "overlay";
+    options = [
+      "x-initrd.mount" "rw" "lowerdir=/sysroot/nix/.ro-store,upperdir=/sysroot/nix/.rw-store/upper,workdir=/sysroot/nix/.rw-store/work"
+      "x-systemd.requires=rw-store.service"
+    ];
+    neededForBoot = true;
+  };
+
+  boot.initrd.systemd = {
     services.rw-store = {
       unitConfig = {
         DefaultDependencies = false;
-        RequiresMountsFor = "/sysroot/nix/.rw-store";
+        RequiresMountsFor = "/sysroot";
       };
       serviceConfig = {
         Type = "oneshot";
-        ExecStart = "/bin/mkdir -p -m 0755 /sysroot/nix/.rw-store/store /sysroot/nix/.rw-store/work /sysroot/nix/store";
+        ExecStart = "/bin/mkdir -p -m 0755 /sysroot/nix/.rw-store/upper /sysroot/nix/.rw-store/work";
       };
     };
   };

@@ -101,7 +101,6 @@ struct Runvf: ParsableCommand {
     @Option var nixStoreImage: String?
     @Argument var bootspec: String?
 
-
     func createConfig() throws -> VZVirtualMachineConfiguration {
 
       let config = options.toVirtualMachineConfiguration()
@@ -111,12 +110,20 @@ struct Runvf: ParsableCommand {
         let bootLoader = VZLinuxBootLoader(
           kernelURL: URL(fileURLWithPath: bootspec.bootspec.kernel))
         bootLoader.initialRamdiskURL = URL(fileURLWithPath: bootspec.bootspec.initrd)
-        var kernelParams = bootspec.bootspec.kernelParams
-        kernelParams.append("init=\(bootspec.bootspec.`init`)")
-        bootLoader.commandLine = bootspec.bootspec.kernelParams.joined(separator: " ")
+        var params = bootspec.bootspec.kernelParams
+        params.append("init=\(bootspec.bootspec.`init`)")
+        bootLoader.commandLine = params.joined(separator: " ")
         config.bootLoader = bootLoader
+
       } else {
         throw ValidationError("No bootspec specified")
+      }
+
+      if #available(macOS 12, *) {
+        let dev = VZVirtioFileSystemDeviceConfiguration(tag: "nix-store")
+        let share = VZSingleDirectoryShare(directory: VZSharedDirectory(url: URL(fileURLWithPath: "/nix/store"), readOnly: true))
+        dev.share = share
+        config.directorySharingDevices = [dev]
       }
 
       config.serialPorts = [createConsoleConfiguration()]
