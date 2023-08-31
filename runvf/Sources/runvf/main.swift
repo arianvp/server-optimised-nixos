@@ -110,8 +110,8 @@ func createOrGetVariableStore() -> VZEFIVariableStore {
 func createConsoleConfiguration() -> VZSerialPortConfiguration {
     let consoleConfiguration = VZVirtioConsoleDeviceSerialPortConfiguration()
     var attributes2 = attributes
-    attributes2.c_iflag &= ~tcflag_t(ICRNL)
-    attributes2.c_lflag &= ~tcflag_t(ICANON | ECHO | ISIG)
+    cfmakeraw(&attributes2)
+    
     tcsetattr(inputFileHandle.fileDescriptor, TCSANOW, &attributes2)
 
     let stdioAttachment = VZFileHandleSerialPortAttachment(fileHandleForReading: inputFileHandle,

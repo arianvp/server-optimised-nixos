@@ -31,6 +31,11 @@
   ];
   systemd.package = pkgs.systemd-sysusers;
 
+  fileSystems."/" = {
+    fsType = "tmpfs";
+    device = "tmpfs";
+  };
+
  
   system.stateVersion = "23.05";
 }

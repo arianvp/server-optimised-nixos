@@ -1,7 +1,7 @@
 {
   description = "A very basic flake";
 
-  inputs.nixpkgs.url = "github:arianvp/nixpkgs/gpt-auto";
+  # inputs.nixpkgs.url = "github:arianvp/nixpkgs/gpt-auto";
 
   nixConfig = {
     extra-trusted-substituters = "https://cache.garnix.io";
@@ -41,7 +41,9 @@
     };
 
     formatter.aarch64-darwin = nixpkgs.legacyPackages.aarch64-darwin.nixpkgs-fmt;
-    packages.aarch64-darwin.runvf = nixpkgs.legacyPackages.aarch64-darwin.swiftPackages.callPackage ./runvf { };
+    packages.aarch64-darwin.runvf = nixpkgs.legacyPackages.aarch64-darwin.swiftPackages.callPackage ./runvf {
+        inherit (nixpkgs.legacyPackages.aarch64-darwin.darwin.apple_sdk.frameworks) Foundation Virtualization;
+    };
 
     devShells.aarch64-darwin.default = nixpkgs.legacyPackages.aarch64-darwin.mkShell {
       name = "shell";
