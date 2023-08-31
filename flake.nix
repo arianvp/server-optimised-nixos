@@ -35,8 +35,8 @@
       inherit
         (self.nixosConfigurations.default.config.system.build)
         toplevel
-        image
-        nspawn;
+        image;
+        # nspawn;
       default = toplevel;
     };
 
