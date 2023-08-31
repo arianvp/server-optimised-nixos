@@ -98,9 +98,9 @@ struct Runvf: ParsableCommand {
   struct Boot: ParsableCommand {
     @OptionGroup var options: Options
 
-    @Option var bootspec: String?
-
     @Option var nixStoreImage: String?
+    @Argument var bootspec: String?
+
 
     func createConfig() throws -> VZVirtualMachineConfiguration {
 
