@@ -46,6 +46,9 @@
     devShells.aarch64-darwin.default = nixpkgs.legacyPackages.aarch64-darwin.mkShell {
       name = "shell";
       nativeBuildInputs = [ ];
+      shellHook = ''
+      export PATH=./runvf/.build/release:$PATH 
+      '';
     };
 
   };
