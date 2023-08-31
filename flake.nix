@@ -3,6 +3,12 @@
 
   inputs.nixpkgs.url = "github:arianvp/nixpkgs/gpt-auto";
 
+  nixConfig = {
+    extra-trusted-substituters = "https://cache.garnix.io";
+    extra-substituters = "https://cache.garnix.io";
+    extra-trusted-public-keys = "cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g=";
+  };
+
   outputs = { self, nixpkgs }: {
 
     formatter.aarch64-linux = nixpkgs.legacyPackages.aarch64-linux.nixpkgs-fmt;
