@@ -111,7 +111,6 @@ func createConsoleConfiguration() -> VZSerialPortConfiguration {
     let consoleConfiguration = VZVirtioConsoleDeviceSerialPortConfiguration()
     var attributes2 = attributes
     cfmakeraw(&attributes2)
-    
     tcsetattr(inputFileHandle.fileDescriptor, TCSANOW, &attributes2)
 
     let stdioAttachment = VZFileHandleSerialPortAttachment(fileHandleForReading: inputFileHandle,

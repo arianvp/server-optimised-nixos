@@ -5,4 +5,5 @@ mounted
 .build
 outputs
 image.raw
+.vscode
 
