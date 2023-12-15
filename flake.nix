@@ -10,16 +10,23 @@
   };
 
   outputs = { self, nixpkgs }: {
-
     formatter.aarch64-linux = nixpkgs.legacyPackages.aarch64-linux.nixpkgs-fmt;
+    formatter.aarch64-darwin = nixpkgs.legacyPackages.aarch64-darwin.nixpkgs-fmt;
 
-    overlays.systemd = import ./overlays/systemd.nix;
+    packages.aarch64-darwin.runvf = nixpkgs.legacyPackages.aarch64-darwin.swiftPackages.callPackage ./runvf { };
+
+    apps.aarch64-darwin.default = {
+      type = "app";
+      program = "${self.packages.aarch64-darwin.runvf}/bin/runvf";
+    };
 
     nixosModules = {
       base = ./modules/base.nix;
       image = ./modules/image.nix;
       etc = ./modules/etc.nix;
     };
+
+    overlays.systemd = import ./overlays/systemd.nix;
 
     nixosConfigurations.default = nixpkgs.lib.nixosSystem {
       system = "aarch64-linux";
@@ -36,22 +43,10 @@
         (self.nixosConfigurations.default.config.system.build)
         toplevel
         image;
-        # nspawn;
+      # nspawn;
       default = toplevel;
     };
 
-    formatter.aarch64-darwin = nixpkgs.legacyPackages.aarch64-darwin.nixpkgs-fmt;
-    packages.aarch64-darwin.runvf = nixpkgs.legacyPackages.aarch64-darwin.swiftPackages.callPackage ./runvf {
-        inherit (nixpkgs.legacyPackages.aarch64-darwin.darwin.apple_sdk.frameworks) Foundation Virtualization;
-    };
-
-    devShells.aarch64-darwin.default = nixpkgs.legacyPackages.aarch64-darwin.mkShell {
-      name = "shell";
-      nativeBuildInputs = [ ];
-      shellHook = ''
-      export PATH=./runvf/.build/release:$PATH 
-      '';
-    };
 
   };
 }

@@ -20,21 +20,20 @@ Note that most of the listed features are currently vaporware
   nix build .#image
   ```
 
-* Spawn an `nspawn` container that checks the integrity of the system
+* Build a bootspec
 
   ```bash
-  sudo nix run '.#nspawn'
+  nix build .#toplevel
   ```
+
 
 * Run with MacOS 'Virtualization.Framework':
 
   We can't provide a nix package until Apple SDK 12 is shipped. tracked here https://github.com/NixOS/nixpkgs/issues/242666
+
   ```bash
-  nix build .#image --eval-store auto --builder ssh://linux-builder
-  cp ./result image.img
-  chmod +w image.img
-  (cd runvf && make)
-  ./runvf/.build/release/runvf image.img
+  nix build .#toplevel --eval-store auto --builder ssh://linux-builder
+  nix run . ./result/boot.json
   ```
 
 

@@ -30,12 +30,13 @@ in
     "virtio_net"
     "virtio_pci"
     "virtio_rng"
+    "virtio_blk"
+    "virtio_scsi"
+    "virtiofs"
   ];
 
   boot.kernelParams = [
     "console=hvc0"
-    "root=tmpfs"
-    "quiet"
     # "systemd.journald.forward_to_console"
     # "systemd.log_level=debug"
     # "mount.usr=PARTLABEL=usr"
