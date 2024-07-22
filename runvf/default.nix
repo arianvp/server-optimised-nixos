@@ -1,4 +1,4 @@
-{ swift, swiftpm, stdenv, swiftpm2nix, darwin, apple_sdk, Dispatch, Foundation }:
+{ swift, swiftpm, stdenv, swiftpm2nix, darwin, Dispatch, Foundation, apple_sdk_12_3 }:
 let
   generated = swiftpm2nix.helpers ./nix;
 in
@@ -10,7 +10,7 @@ stdenv.mkDerivation {
   buildInputs = [
     Dispatch
     Foundation
-    apple_sdk.frameworks.Virtualization
+    apple_sdk_12_3.frameworks.Virtualization
   ];
   # The helper provides a configure snippet that will prepare all dependencies
   # in the correct place, where SwiftPM expects them.

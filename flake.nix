@@ -3,6 +3,8 @@
 
   # inputs.nixpkgs.url = "github:arianvp/nixpkgs/gpt-auto";
 
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs?ref=nixpkgs-unstable";
+
   nixConfig = {
     extra-trusted-substituters = "https://cache.garnix.io";
     extra-substituters = "https://cache.garnix.io";
@@ -13,7 +15,13 @@
     formatter.aarch64-linux = nixpkgs.legacyPackages.aarch64-linux.nixpkgs-fmt;
     formatter.aarch64-darwin = nixpkgs.legacyPackages.aarch64-darwin.nixpkgs-fmt;
 
-    packages.aarch64-darwin.runvf = nixpkgs.legacyPackages.aarch64-darwin.swiftPackages.callPackage ./runvf { };
+    packages.aarch64-darwin.runvf = with nixpkgs.legacyPackages.aarch64-darwin; swiftPackages.callPackage ./runvf {
+      stdenv = overrideSDK stdenv {
+        darwinMinVersion = "12.3";
+        darwinSdkVersion = "12.3";
+      };
+      apple_sdk_12_3 = darwin.apple_sdk_12_3;
+    };
 
     apps.aarch64-darwin.default = {
       type = "app";
