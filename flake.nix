@@ -1,7 +1,7 @@
 {
-  description = "A very basic flake";
+  description = "Server Optimised NixOS";
 
-  # inputs.nixpkgs.url = "github:arianvp/nixpkgs/gpt-auto";
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs?ref=nixos-unstable";
 
   nixConfig = {
     extra-trusted-substituters = "https://cache.garnix.io";
@@ -31,7 +31,6 @@
     nixosConfigurations.default = nixpkgs.lib.nixosSystem {
       system = "aarch64-linux";
       modules = [
-        { nixpkgs.overlays = [ self.overlays.systemd ]; }
         self.nixosModules.base
         self.nixosModules.image
         self.nixosModules.etc
