@@ -1,7 +1,7 @@
 {
   description = "Server Optimised NixOS";
 
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs?ref=nixos-unstable";
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs?ref=nixos-24.05";
 
   nixConfig = {
     extra-trusted-substituters = "https://cache.garnix.io";
@@ -23,7 +23,7 @@
     nixosModules = {
       base = ./modules/base.nix;
       image = ./modules/image.nix;
-      etc = ./modules/etc.nix;
+      nix-virtiofs = ./modules/nix-virtiofs.nix;
     };
 
     overlays.systemd = import ./overlays/systemd.nix;
@@ -31,9 +31,9 @@
     nixosConfigurations.default = nixpkgs.lib.nixosSystem {
       system = "aarch64-linux";
       modules = [
+        self.nixosModules.nix-virtiofs
         self.nixosModules.base
-        self.nixosModules.image
-        self.nixosModules.etc
+        # self.nixosModules.image
       ];
     };
 
